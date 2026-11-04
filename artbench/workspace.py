@@ -1,10 +1,15 @@
 """Connecting projects, GitHub style: first the game (engine) project, then the art folder for it, which is either
 linked (it already exists) or created from the folder template below. The art folder carries its own
 art_inventory.json and tracking files, so it can be moved or shared as a whole. Nothing here deletes files;
-detaching a project only removes it from the registry."""
+detaching a project only removes it from the registry. A connect keeps a progress record the page reads while it
+waits (connect_progress): checking the folder, then the engine's own stages of reading the project."""
+import copy
+import functools
 import json
 import os
 import re
+import threading
+import time
 
 from . import config, engines, store
 from .errors import NotFound
@@ -15,6 +20,51 @@ TEMPLATE_STATES = {"ingame": "FBX", "outbox": "Outbox", "stock": "Stock", "archi
 TEMPLATE_DIRS = ("FBX", "Outbox", "Stock", "_Archive", "Blend", "Textures")
 DEFAULT_CATEGORIES = ["Characters", "Props", "Environment", "Weapons", "Blocks"]
 README_NAME = "README.md"
+
+
+# --- the progress of the connect that runs now (or ran last): one at a time, the server holds its lock meanwhile ------
+_progress = {"state": "idle"}
+_progress_lock = threading.Lock()
+
+
+def connect_progress():
+    """{state: idle | running | done | error, stage, stages: [{id, done, total}], current, name, project, message,
+    started, elapsed}. Stages: "check" (the folder), then the engine's: "files", "meta", "refs", "settings"."""
+    with _progress_lock:
+        p = copy.deepcopy(_progress)
+    if "started" in p:
+        p["elapsed"] = round((p.get("ended") or time.time()) - p["started"], 2)
+    return p
+
+
+def _report(stage, done, total, current=""):
+    with _progress_lock:
+        stages = _progress.setdefault("stages", [])
+        if not stages or stages[-1]["id"] != stage:
+            stages.append({"id": stage, "done": 0, "total": 0})
+        stages[-1].update(done=done, total=total)
+        _progress.update(stage=stage, current=current)
+
+
+def _tracked(fn):
+    """Runs a connect with its progress record: running from the start, done with the project's id, or error with the
+    reason (the exception still reaches the caller)."""
+    @functools.wraps(fn)
+    def run(*args, **kwargs):
+        with _progress_lock:
+            _progress.clear()
+            _progress.update(state="running", stage="check", stages=[{"id": "check", "done": 0, "total": 1}],
+                             current="", name="", project=None, message="", started=time.time())
+        try:
+            cfg = fn(*args, **kwargs)
+        except Exception as e:
+            with _progress_lock:
+                _progress.update(state="error", message=str(e), ended=time.time())
+            raise
+        with _progress_lock:
+            _progress.update(state="done", project=cfg.get("id"), name=cfg.get("name") or cfg.get("id"), ended=time.time())
+        return cfg
+    return run
 
 
 def check_engine(path):
@@ -35,15 +85,18 @@ def check_engine(path):
     return {"ok": False, "engine": None, "message": "no Unity project found above this folder (needs Assets + ProjectSettings)"}
 
 
+@_tracked
 def connect(name, engine_root, art_parent, art_name=None, categories=None, create=True):
-    """Registers a project: validates the engine folder, links or creates the art folder, writes its config.
-    Returns the loaded config. Raises ValueError with a readable message on bad input."""
+    """Registers a project: validates the engine folder, links or creates the art folder, writes its config, and
+    reads the engine project once (so the first open is quick). Returns the loaded config. Raises ValueError with a
+    readable message on bad input."""
     name = (name or "").strip()
     if not name:
         raise ValueError("project name is empty")
     engine = check_engine(engine_root)
     if not engine["ok"]:
         raise ValueError(engine["message"])
+    _report("check", 1, 1, engine["project_root"])
     art_name = (art_name or "").strip() or _safe_name(name)
     if not os.path.isdir(art_parent or ""):
         raise ValueError("parent folder for the art folder does not exist")
@@ -77,9 +130,11 @@ def connect(name, engine_root, art_parent, art_name=None, categories=None, creat
     register(cfg_path)
     loaded = config.load(cfg_path)
     store.log(loaded, "CONNECT", engine["engine_root"], art_dir)
+    engines.of(loaded).build_dump(loaded, force=True, progress=_report)
     return loaded
 
 
+@_tracked
 def connect_project(engine_path, name=None):
     """Project mode: registers a game project on its own (no art folder). `engine_path` is any folder inside the
     engine project; the whole content root (Unity: Assets/) is inventoried. The config and every file Artbench keeps
@@ -88,6 +143,7 @@ def connect_project(engine_path, name=None):
     engine = check_engine(engine_path)
     if not engine["ok"]:
         raise ValueError(engine["message"])
+    _report("check", 1, 1, engine["project_root"])
     content = os.path.normpath(engine["assets_root"])
     project_root = os.path.normpath(engine["project_root"])
     known = [c for c in config.projects() if "error" not in c]
@@ -113,7 +169,7 @@ def connect_project(engine_path, name=None):
     register(cfg_path)
     loaded = config.load(cfg_path)
     store.log(loaded, "CONNECT", project_root, "project mode")
-    engines.of(loaded).build_dump(loaded, force=True)
+    engines.of(loaded).build_dump(loaded, force=True, progress=_report)
     return loaded
 
 
@@ -146,15 +202,19 @@ def _free_id(base, suffix, mode):
     return out
 
 
+@_tracked
 def link(cfg_path):
-    """Adds an existing art folder (one that already has an art_inventory.json) to the registry."""
+    """Adds an existing art folder (one that already has an art_inventory.json) to the registry and reads its engine
+    project once, when that is reachable."""
     cfg_path = os.path.normpath(cfg_path)
     if os.path.isdir(cfg_path):
         cfg_path = os.path.join(cfg_path, config.CONFIG_NAME)
     if not os.path.isfile(cfg_path):
         raise ValueError(f"no {config.CONFIG_NAME} at {cfg_path}")
     loaded = config.load(cfg_path)         # raises on a broken file
+    _report("check", 1, 1, os.path.dirname(cfg_path))
     register(cfg_path)
+    engines.of(loaded).build_dump(loaded, force=True, progress=_report)
     return loaded
 
 

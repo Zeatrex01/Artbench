@@ -403,7 +403,8 @@ project lock (the page server and an agent's MCP process may look at once); a lo
 | POST `/api/projects/hide_folder` | {project, folder ("Assets/..."), hidden (default true)} | {ok, hidden: the project's `engine_ignore_dump`}; adds or removes the entry, rebuilds the dump, a HIDE or SHOW history line |
 | POST `/api/projects/github` | {project, account ("" clears)} | {ok, account, active, matches, switch, git_user}; 400 for a name GitHub would not accept |
 | GET `/api/projects/check` | `engine_root` | {ok, engine, project_root, assets_root, engine_root, message} |
-| POST `/api/projects/connect` | {name, engine_root, art_parent, art_name?, categories?, create?} | {ok, id, config_path, art_root} |
+| GET `/api/projects/progress` | | the running (or last) connect's record, `workspace.connect_progress()`: {state: idle / running / done / error, stage, stages: [{id, done, total}], current (the file being read), name, project, message, started, elapsed}; stages `check`, then the engine's `files`, `meta`, `refs`, `settings` (`unity_dump.build(progress=)` through `build_dump(cfg, force, progress)`); read without the server's lock, so the page polls it while the connect holds it |
+| POST `/api/projects/connect` | {name, engine_root, art_parent, art_name?, categories?, create?} | {ok, id, config_path, art_root}; reads the engine project once (its progress in `/api/projects/progress`, like `connect_project` and `link`) so the first open is quick |
 | POST `/api/projects/link` | {path (art folder or its config)} | {ok, id, config_path, art_root} |
 | POST `/api/projects/detach` | {id} | {ok} |
 | POST `/api/pick_folder` | {title?, initial?} | {path or null} |

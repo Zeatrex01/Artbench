@@ -167,6 +167,8 @@ class Handler(BaseHTTPRequestHandler):
                     self.wfile.write(body)
                 else:
                     self._json({"state": state}, 202 if state == "pending" else 404)
+            elif u.path == "/api/projects/progress":   # read while a connect holds the lock: no lock here
+                self._json(workspace.connect_progress())
             elif u.path == "/api/projects/check":
                 self._json(workspace.check_engine(q.get("engine_root", [""])[0]))
             elif u.path == "/api/history":

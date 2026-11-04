@@ -63,7 +63,7 @@ class UnityAdapter(EngineAdapter):
     def sidecars(self, path):
         return [path + ".meta"]
 
-    def build_dump(self, cfg, force=False):
+    def build_dump(self, cfg, force=False, progress=None):
         """The asset dump, rebuilt when missing, older than DUMP_MAX_AGE, forced, or older than the last bridge report
         that carried asset events (dump_stale_since). None without a readable content root."""
         root = self.content_root(cfg)
@@ -74,7 +74,7 @@ class UnityAdapter(EngineAdapter):
         if dump is None or time.time() - dump.get("scanned", 0) > DUMP_MAX_AGE or \
                 dump.get("scanned", 0) < self.dump_stale_since(cfg):
             ignore = cfg.get("engine_ignore_dump", self.dump_ignore())
-            dump = unity_dump.write(root, path, ignore, log=lambda *_: None)
+            dump = unity_dump.write(root, path, ignore, log=lambda *_: None, progress=progress)
         return dump
 
     def lookup(self, dump):

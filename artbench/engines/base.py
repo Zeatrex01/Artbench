@@ -62,7 +62,8 @@ class EngineAdapter:
         """Files the engine keeps beside an asset (kept untouched when Artbench overwrites the asset)."""
         return []
 
-    def build_dump(self, cfg, force=False):
+    def build_dump(self, cfg, force=False, progress=None):
+        """The engine's asset dump; `progress(stage, done, total, current)` hears how far a rebuild is."""
         raise NotImplementedError
 
     def lookup(self, dump):

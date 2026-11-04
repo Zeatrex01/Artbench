@@ -28,7 +28,8 @@ js/inspector.js     detail panel: hero, paths, actions, state bar, send, used-by
 js/tasks.js         kanban view + shared task buttons
 js/graph.js         canvas force graph with thumbnails in model nodes
 js/views.js         engine-only, placeholders, layout, blends, changes, history, unsorted
-js/projects.js      connect: Game project only (project mode, default) or game project + art folder; link, detach;
+js/projects.js      the projects hub: connect (Game project only, default, or game project + art folder) with its
+                    progress, link, detach;
                     the AI connection card; the machine check
 js/catalog.js       project mode: art catalog by kind, unused view, asset card, kind navigation, previews and
                     model statistics in rows and cards, sort, hidden folders, Open in Blender
@@ -69,7 +70,14 @@ animator bad, data muted.
   filter pills (library only), footer: Projects, language, scan stamps. Turkish names come from `i18n.js`.
 - **Main**: topbar (view title + count, search with `/` hint, grid/list toggle, refresh), scrolling view.
 - **Inspector 380px**: appears when something is selected, slides in; overlays below 1250px.
-- **Projects screen**: full-screen card wizard, shown on first run or from the project pill.
+- **Projects screen**: a full-screen hub, shown on first run, from the sidebar's **Connect a project** button (under the
+  project pill) or the pill's Manage entry. Connecting comes first: the Unity project folder in a large pick area, two
+  plain tiles (Game project only / Game project + art folder), the name, Connect; linking an existing art folder folds
+  under it. While a connect runs, that area shows its progress: one bar, a row per stage (checking the folder, listing
+  the files, the .meta files n / N, what uses what n / N, the project settings, opening the catalog) and the file being
+  read. Stages follow `/api/projects/progress` and each stays on screen at least 320 ms, so a small project still reads
+  step by step; counts and the bar ease toward the server's numbers and never go back. Below: the connected projects
+  as cards (the open one outlined in amber), then the AI connection, the machine check and the About card.
 
 ## Views
 

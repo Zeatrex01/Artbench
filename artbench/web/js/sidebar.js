@@ -53,6 +53,7 @@ export function renderSidebar() {
   $('#sidebar').innerHTML = `
     <div class="brand">${markSvg('mark')}<div><h1>Artbench</h1><small>${t('app.subtitle')}</small></div></div>
     <div class="projpill"><select id="projSel">${projects}<option value="__manage">${t('side.manage')}</option></select></div>
+    <button class="btn sm side-connect" id="sideConnect">${icon('plus')} ${t('side.connect')}</button>
     ${githubLine()}
     <nav class="nav">${viewsFor().filter(([k]) => k !== 'unsorted' || c.unsorted > 0).map(([k, label, ic]) =>
       `<a class="${S.view === k ? 'on' : ''}" data-view="${k}">${icon(ic)}<span>${t(label)}</span>${navCount[k] != null ? `<span class="n ${warn[k] ? 'warn' : ''}">${navCount[k]}</span>` : ''}</a>`).join('')}</nav>
@@ -64,6 +65,7 @@ export function renderSidebar() {
   $$('#sidebar [data-copy]').forEach(b => b.onclick = () => navigator.clipboard.writeText(b.dataset.copy).then(() => toast(t('ui.copied'), 'ok'), () => toast(b.dataset.copy)));
   $('#projSel').onchange = e => { if (e.target.value === '__manage') { e.target.value = S.project; actions.openProjects(); } else actions.switchProject(e.target.value); };
   $('#openProjects').onclick = actions.openProjects;
+  $('#sideConnect').onclick = actions.openProjects;
   $('#langBtn').onclick = () => { setLang(lang() === 'en' ? 'tr' : 'en'); actions.render(); };
   $$('.nav a').forEach(a => a.onclick = () => actions.setView(a.dataset.view));
   if (project) bindKindNav($('#sidebar'));

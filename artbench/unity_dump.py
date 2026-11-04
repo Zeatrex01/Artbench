@@ -139,43 +139,64 @@ def _kind(path, head):
     return KIND_BY_EXT.get(ext, "other")
 
 
-def build(assets_root, ignore=DEFAULT_IGNORE, log=print):
+def _reporter(progress, total):
+    """A progress callback thinned to about 200 reports per stage; the last item is always reported."""
+    step = max(1, total // 200)
+    return lambda stage, done, current: progress(stage, done, total, current) if done % step == 0 or done == total else None
+
+
+def build(assets_root, ignore=DEFAULT_IGNORE, log=print, progress=None):
     """{"assets": {guid: {"path", "kind"}}, "refs": {guid: [referrer paths]}, "uses": {path: [guids]},
     "build_scenes": [guids], "force_text": bool | None, "settings_refs": {guid: [ProjectSettings files]},
     "outside": {guid: path} (assets of ignored folders), "scanned", "assets_root"}. Folders in `ignore` add their
     references but not their assets; a model's import remaps (externalObjects in its .meta) are references by the
-    model."""
+    model. `progress(stage, done, total, current)` hears how far the reading is: "files" (listing), "meta" (each
+    .meta), "refs" (each scene, prefab, material...), "settings"; `current` is the file's path under Assets."""
     t0 = time.time()
     assets_root = os.path.normpath(assets_root)
+    progress = progress or (lambda *_: None)
+    rel_of = lambda p: os.path.relpath(p, assets_root).replace("\\", "/")
+    listed = []
+    for item in _walk(assets_root, set(ignore)):
+        listed.append(item)
+        if len(listed) % 500 == 0:
+            progress("files", len(listed), 0, rel_of(item[0]))
+    progress("files", len(listed), len(listed), "")
+    metas = [x for x in listed if x[0].endswith(".meta")]
     cache = _load_cache()
     assets, by_path = {}, {}
-    ref_files = []
+    ref_files = [p for p, _ in listed if not p.endswith(".meta") and p.lower().endswith(REF_EXTS)]
     refs, uses, outside = {}, {}, {}
-    for p, ignored in _walk(assets_root, set(ignore)):
-        if p.endswith(".meta"):
-            target = p[:-5]
-            if not os.path.isfile(target):
-                continue                              # folder meta or stale meta
-            guid, remaps = _read_meta(p, cache)
-            if not guid:
-                continue
-            rel = os.path.relpath(target, assets_root).replace("\\", "/")
-            by_path[rel] = guid
-            if not ignored:
-                assets[guid] = {"path": rel, "kind": None}
-            else:
-                outside[guid] = rel
-            for g in remaps:
-                refs.setdefault(g, []).append(rel)
-            if remaps:
-                uses[rel] = list(remaps)
-        elif p.lower().endswith(REF_EXTS):
-            ref_files.append(p)
+    report = _reporter(progress, len(metas))
+    if not metas:
+        progress("meta", 0, 0, "")
+    for done, (p, ignored) in enumerate(metas, 1):
+        report("meta", done, rel_of(p[:-5]))
+        target = p[:-5]
+        if not os.path.isfile(target):
+            continue                              # folder meta or stale meta
+        guid, remaps = _read_meta(p, cache)
+        if not guid:
+            continue
+        rel = os.path.relpath(target, assets_root).replace("\\", "/")
+        by_path[rel] = guid
+        if not ignored:
+            assets[guid] = {"path": rel, "kind": None}
+        else:
+            outside[guid] = rel
+        for g in remaps:
+            refs.setdefault(g, []).append(rel)
+        if remaps:
+            uses[rel] = list(remaps)
 
     # Kinds and references, with the cache.
     read = 0
-    for p in ref_files:
+    report = _reporter(progress, len(ref_files))
+    if not ref_files:
+        progress("refs", 0, 0, "")
+    for done, p in enumerate(ref_files, 1):
         rel = os.path.relpath(p, assets_root).replace("\\", "/")
+        report("refs", done, rel)
         st = os.stat(p)
         key = p.lower()
         entry = cache.get(key)
@@ -204,7 +225,9 @@ def build(assets_root, ignore=DEFAULT_IGNORE, log=print):
 
     if cache.dirty:
         store._write_json(CACHE_PATH, cache, compact=True)  # atomic: another process may read it meanwhile
+    progress("settings", 0, 1, "ProjectSettings")
     force_text, build_scenes, settings_refs = _project_settings(assets_root)
+    progress("settings", 1, 1, "ProjectSettings")
     out = {"scanned": time.time(), "assets_root": assets_root, "assets": assets, "refs": refs, "uses": uses,
            "build_scenes": build_scenes, "force_text": force_text, "settings_refs": settings_refs, "outside": outside}
     log(f"unity dump: {len(assets)} assets, {len(ref_files)} reference files ({read} read, rest cached), "
@@ -212,8 +235,8 @@ def build(assets_root, ignore=DEFAULT_IGNORE, log=print):
     return out
 
 
-def write(assets_root, out_path, ignore=DEFAULT_IGNORE, log=print):
-    data = build(assets_root, ignore, log)
+def write(assets_root, out_path, ignore=DEFAULT_IGNORE, log=print, progress=None):
+    data = build(assets_root, ignore, log, progress)
     os.makedirs(os.path.dirname(os.path.abspath(out_path)), exist_ok=True)
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(data, f)

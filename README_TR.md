@@ -42,7 +42,9 @@ python -m artbench setup "D:/Projeler/MyGame" --mcp claude   (Claude Code'a da k
 python -m artbench setup "D:/Projeler/MyGame" --github hesap-adin   (bu projenin push yaptığı GitHub hesabı)
 ```
 Komut projeyi bulur, ilk taramayı yapar ve Claude Code, Gemini CLI ve Codex için MCP kayıt satırlarını yazar.
-Sayfadan da olur: **Projeler** → **Sadece oyun projesi** → klasörü seç → **Bağla**.
+Sayfadan da olur: sol üstteki **Proje bağla** → Unity proje klasörünü seç → **Sadece oyun projesi** → **Bağla**.
+Bağlanırken her adım ilerlemesiyle görünür (dosyalar, .meta dosyaları, neyin neyi kullandığı, proje ayarları); bitince
+katalog açılır.
 
 Kullanım kelimeleri:
 - **Kullanılıyor**: projede bir şey ona referans veriyor (build ayarlarındaki sahneler de sayılır).
