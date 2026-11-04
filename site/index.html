@@ -15,6 +15,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,600..700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<script>document.documentElement.classList.add("js");setTimeout(function () { if (!window.__artbench) document.documentElement.classList.remove("js"); }, 3000);</script>
+<script type="module" src="js/site.js"></script>
 </head>
 <body>
 
@@ -24,8 +26,9 @@
     <span>Artbench</span>
   </a>
   <nav>
-    <a href="#features">Features</a>
+    <a href="#tour">Tour</a>
     <a href="#blender">Blender</a>
+    <a href="#ai">AI tools</a>
     <a href="#install">Install</a>
     <a href="{{REPO}}">GitHub</a>
     <a class="btn small" href="{{ZIP_URL}}">Download</a>
@@ -34,113 +37,179 @@
 
 <main>
   <section class="hero">
-    <video class="reveal" src="assets/logo-reveal.mp4" poster="assets/logo-reveal-poster.jpg" autoplay muted playsinline aria-label="The Artbench logo: a pencil draws a trestle and lies down on it"></video>
-    <h1>The art side of your game, in one place.</h1>
-    <p class="lead">Artbench reads your Unity project, and the art folder you keep beside it: what each asset is, what uses
+    <div class="mat" aria-hidden="true"></div>
+    <button class="lock" type="button" aria-label="Artbench (draw the logo again)">
+      <svg class="mark" viewBox="0 0 48 48" aria-hidden="true"><g opacity=".62"><path d="M11 42.5L20.6 25.1M27.4 25.1L37 42.5M15.4 35L32.6 35" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round"/></g><path d="M7.3 22.8L40.7 22.8" fill="none" stroke="currentColor" stroke-width="4.6" stroke-linecap="round"/><rect x="9" y="15.5" width="3.2" height="4.6" rx="1.1" fill="currentColor" opacity=".62"/><rect x="12.8" y="15.5" width="19.7" height="4.6" fill="currentColor"/><path d="M32.5 15.5L39 17.8L32.5 20.1z" fill="currentColor" opacity=".42"/><path d="M36.8 17L39 17.8L36.8 18.6z" fill="currentColor"/></svg>
+      <span class="word"><i style="--i:0">A</i><i style="--i:1">r</i><i style="--i:2">t</i><i style="--i:3">b</i><i style="--i:4">e</i><i style="--i:5">n</i><i style="--i:6">c</i><i style="--i:7">h</i></span>
+    </button>
+    <h1 class="rise">The art side of your game, <span class="hl">in one place.</span></h1>
+    <p class="lead rise">Artbench reads your Unity project, and the art folder you keep beside it: what each asset is, what uses
       it, what nothing uses, and what changed since you last looked. It runs on your computer.</p>
-    <div class="cta">
+    <div class="cta rise">
       <a class="btn" href="{{ZIP_URL}}">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Download for Windows
       </a>
-      <a class="btn ghost" href="{{REPO}}/releases/tag/{{TAG}}">Release notes</a>
+      <a class="btn ghost" href="#film">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg>
+        Watch 47 seconds
+      </a>
     </div>
-    <p class="fine">Artbench {{VERSION}} · Windows 10/11, 64-bit · about 11 MB · nothing to install · free</p>
+    <p class="fine rise">Artbench {{VERSION}} · Windows 10/11, 64-bit · about 11 MB · nothing to install · free ·
+      <a href="{{REPO}}/releases/tag/{{TAG}}">release notes</a></p>
   </section>
 
-  <section class="film">
+  <section id="tour" class="tour">
+    <div class="ask" aria-live="polite">
+      <span class="ask-label">Ask</span>
+      <p class="q"><span class="typed">Which of these textures does nothing use?</span><span class="caret" aria-hidden="true"></span></p>
+    </div>
+    <div class="tabs" role="tablist" aria-label="Artbench views">
+      <button role="tab" aria-selected="true" data-q="Which of these textures does nothing use?"><b>01</b> Unused<i></i></button>
+      <button role="tab" aria-selected="false" data-q="What uses this model, and how heavy is it?"><b>02</b> Catalog<i></i></button>
+      <button role="tab" aria-selected="false" data-q="What changed after that pull?"><b>03</b> Changes<i></i></button>
+      <button role="tab" aria-selected="false" data-q="Is the model in the game the one on my desktop?"><b>04</b> Sync<i></i></button>
+      <button role="tab" aria-selected="false" data-q="Can I send the new one without breaking anything?"><b>05</b> Send<i></i></button>
+      <button role="tab" aria-selected="false" data-q="What's left to fix on the helmet?"><b>06</b> Tasks<i></i></button>
+    </div>
+    <div class="window">
+      <figure class="view on">
+        <div class="shot" style="--mx:-18.3%;--my:-3.9%">
+          <img src="shots/unused.webp" width="2400" height="1500" alt="The Unused view: six assets nothing in the project references">
+          <span class="tag" style="--x:81.1%;--y:20.3%" data-side="l"><span>Nothing references it</span></span>
+          <span class="tag" style="--x:88.2%;--y:49.7%" data-side="bl"><span>A task is already on it</span></span>
+          <span class="tag" style="--x:90.6%;--y:42.2%" data-side="bl"><span>Textures too, with their size</span></span>
+        </div>
+        <figcaption>Assets nothing in the project references get their own list, apart from the ones code loads by
+          name. Check before you delete; Artbench never deletes anything itself.</figcaption>
+      </figure>
+      <figure class="view">
+        <div class="shot" style="--mx:-53.3%;--my:-18.9%">
+          <img src="shots/catalog.webp" width="2400" height="1500" alt="The art catalog with a model's card: its preview, triangles and what uses it" loading="lazy">
+          <span class="tag" style="--x:74.2%;--y:52.1%" data-side="l"><span>Read from the file itself</span></span>
+          <span class="tag" style="--x:74.2%;--y:75.4%" data-side="l"><span>What uses it</span></span>
+          <span class="tag" style="--x:53.5%;--y:34.8%" data-side="b"><span>In use, used by 1</span></span>
+        </div>
+        <figcaption>Every model, texture, material, prefab, scene, animation and sound, with previews, triangle counts
+          and texture sizes. Read from the project's own files; Unity doesn't have to be running.</figcaption>
+      </figure>
+      <figure class="view">
+        <div class="shot" style="--mx:-23.3%;--my:0%">
+          <img src="shots/changes.webp" width="2400" height="1500" alt="The changes since the last look" loading="lazy">
+          <span class="tag" style="--x:92.9%;--y:19.7%" data-side="bl"><span>The list starts again from here</span></span>
+          <span class="tag" style="--x:24.3%;--y:39.4%" data-side="b"><span>Added, changed, moved, removed</span></span>
+        </div>
+        <figcaption>After a pull, a branch switch or a teammate's work: what arrived, in one list. Assets are followed
+          by their id, so a moved file is one line.</figcaption>
+      </figure>
+      <figure class="view">
+        <div class="shot" style="--mx:-56.5%;--my:-38.9%">
+          <img src="shots/library.webp" width="2400" height="1500" alt="A model's sync panel: changed on the desktop, unchanged in Unity" loading="lazy">
+          <span class="tag" style="--x:75.8%;--y:73.3%" data-side="l"><span>Your copy is newer</span></span>
+          <span class="tag" style="--x:75.8%;--y:89.9%" data-side="l"><span>Send it, with a plan</span></span>
+          <span class="tag" style="--x:74.2%;--y:54.6%" data-side="l"><span>Your folder and the game, paired</span></span>
+        </div>
+        <figcaption>Keep your FBX, Blender and texture files in your own folder. Artbench pairs each one with its copy in
+          the game and tells you which side is newer.</figcaption>
+      </figure>
+      <figure class="view">
+        <div class="shot" style="--mx:-28.3%;--my:-23.9%">
+          <img src="shots/send-plan.webp" width="2400" height="1500" alt="Sending a changed model to Unity: the plan to confirm" loading="lazy">
+          <span class="tag" style="--x:33.8%;--y:49.3%" data-side="l"><span>The old copy is archived</span></span>
+          <span class="tag" style="--x:33.8%;--y:55.9%" data-side="l"><span>.meta stays: references keep working</span></span>
+          <span class="tag" style="--x:66.8%;--y:62.7%" data-side="r"><span>Nothing moves until you say so</span></span>
+        </div>
+        <figcaption>Send a model to Unity, pull one back, or bring a Unity model into your folder: always with a plan,
+          file by file, that you confirm first.</figcaption>
+      </figure>
+      <figure class="view">
+        <div class="shot" style="--mx:-13.3%;--my:-18.9%">
+          <img src="shots/tasks.webp" width="2400" height="1500" alt="The task board and the notes sent from Blender" loading="lazy">
+          <span class="tag" style="--x:19.7%;--y:33.6%" data-side="l"><span>Tied to Helmet.fbx</span></span>
+          <span class="tag" style="--x:18.5%;--y:73.3%" data-side="t"><span>Notes written in Blender</span></span>
+          <span class="tag" style="--x:63.1%;--y:31%" data-side="b"><span>One click: Start, Finish</span></span>
+        </div>
+        <figcaption>Tasks with priorities, tied to an asset when you want, beside the notes you pinned in Blender.
+          Your AI tool sees the same board.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="specs reveal" aria-label="At a glance">
+    <div><b>Local</b><span>runs on your computer; nothing is uploaded</span></div>
+    <div><b>11 MB</b><span>Python inside, nothing to install</span></div>
+    <div><b>Unity</b><span>read from its own text files</span></div>
+    <div><b>Blender 4.2+</b><span>previews, triangles, the notes add-on</span></div>
+    <div><b>MCP</b><span>Claude Code, Gemini CLI, Codex</span></div>
+  </section>
+
+  <section id="blender" class="split reveal">
+    <div class="text">
+      <p class="kicker">In Blender</p>
+      <h2>Notes that sit <span class="hl">on the model</span></h2>
+      <p>The Artbench add-on pins notes and to-dos to your objects in Blender's 3D view. They're kept inside the .blend
+        and work without Artbench. When it's running, one click sends them to its task board.</p>
+      <p class="small">Edit › Preferences › Get Extensions › Install from Disk: <code>artbench_bridge.zip</code>, in the
+        download or <a href="{{ADDON_URL}}">on its own</a>.</p>
+    </div>
+    <figure class="frame"><img src="images/blender-notes.gif" width="720" height="480" alt="Note pins beside the objects of a Blender scene" loading="lazy"></figure>
+  </section>
+
+  <section id="ai" class="split flip reveal">
+    <div class="text">
+      <p class="kicker">Your AI tools</p>
+      <h2>Ask in words, <span class="hl">get the list</span></h2>
+      <p>Claude Code, Gemini CLI and Codex can use Artbench over MCP: what nothing uses, what changed, what a material
+        ends up in. They can add a task to the board too. The Projects screen adds Artbench to Claude Code in one click.</p>
+    </div>
+    <div class="term" aria-label="An AI tool asking Artbench over MCP">
+      <div class="term-bar"><span>claude</span><span>artbench over MCP</span></div>
+      <pre><code class="term-out">&gt; What does nothing use in Cubit Arena?
+  artbench · unused
+  6 assets nothing references:
+    Cubit.blend         Characters/Cubit
+    ChestArmor.fbx      Characters/Gear    1 task
+    Cubit_v1.fbx        Characters/Old     1 task
+    T_Gear_Mask.png     Characters/Gear
+    T_Sword_Emissive    Characters/Gear    1 task
+    Rock.png            ThirdParty/Pack
+&gt; Add a high task: the sword's grip clips the hand.
+  artbench · task_add  priority=high  asset=Sword.fbx
+  ✓ added to the board</code></pre>
+    </div>
+  </section>
+
+  <section class="rule reveal">
+    <p class="kicker">The rule</p>
+    <h2>Nothing is <span class="hl">overwritten silently</span></h2>
+    <ol>
+      <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg>Artbench writes nothing into your Unity project on its own.</li>
+      <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg>Every send or pull shows a plan, file by file, and waits for your OK.</li>
+      <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg>A file changed on both sides is a conflict that waits for your decision.</li>
+      <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg>Replaced copies go to an archive. Nothing is deleted.</li>
+    </ol>
+  </section>
+
+  <section id="film" class="film reveal">
     <video src="assets/artbench-film-720p.mp4" poster="assets/film-poster.jpg" controls preload="none" playsinline aria-label="A 47-second film of Artbench"></video>
   </section>
 
-  <section class="questions">
-    <p>The questions it answers</p>
-    <ul>
-      <li>Which of these textures does nothing use?</li>
-      <li>What uses this material, and which scene does it end up in?</li>
-      <li>What changed after that pull?</li>
-      <li>Is the model in the game the one on my desktop?</li>
-    </ul>
-  </section>
-
-  <section id="features" class="features">
-    <article>
-      <div class="text">
-        <h2>Know what the game has, and what uses it</h2>
-        <p>Every model, texture, material, prefab, scene, animation and sound of a Unity project, with previews,
-          triangle counts and texture sizes. It reads the project's own files; Unity doesn't have to be running.
-          What each asset uses, and what uses it, both ways.</p>
-      </div>
-      <img src="images/catalog.png" alt="The art catalog with a model's card: its preview, triangles and what uses it" loading="lazy">
-    </article>
-    <article>
-      <div class="text">
-        <h2>Find what nothing uses</h2>
-        <p>Assets that nothing in the project references get their own list, apart from the ones code loads by name.
-          Check before you delete; Artbench never deletes anything itself.</p>
-      </div>
-      <img src="images/unused.png" alt="The list of assets nothing references" loading="lazy">
-    </article>
-    <article>
-      <div class="text">
-        <h2>See what changed since you last looked</h2>
-        <p>After a pull, a branch switch or a teammate's work: what was added, changed, moved or removed, in one
-          list. Mark it as seen and the list starts again from there.</p>
-      </div>
-      <img src="images/changes.png" alt="The changes since the last look" loading="lazy">
-    </article>
-    <article>
-      <div class="text">
-        <h2>Keep your art folder and the game in step</h2>
-        <p>Keep your FBX, Blender and texture files in your own folder. Send a model to Unity, pull one back, or
-          bring a Unity model into your folder: always with a plan you confirm first. The .meta file stays, the
-          replaced copy is archived, and nothing is overwritten silently.</p>
-      </div>
-      <img src="images/send-plan.png" alt="Sending a changed model to Unity: the plan to confirm" loading="lazy">
-    </article>
-  </section>
-
-  <section id="blender" class="feature-wide">
-    <h2>Notes that sit on the model, in Blender</h2>
-    <p>The Artbench add-on pins notes and to-dos to your objects in Blender's 3D view. They're kept inside the .blend
-      and work without Artbench. When it's running, one click sends them to its task board.</p>
-    <img src="images/blender-notes.gif" alt="Note pins beside the objects of a Blender scene" loading="lazy">
-  </section>
-
-  <section class="features">
-    <article>
-      <div class="text">
-        <h2>One task board, for you and your AI tool</h2>
-        <p>Tasks with priorities, tied to an asset when you want. Claude Code, Gemini CLI and Codex can use Artbench
-          too, over MCP: "What does nothing use?" or "Add a task to fix the sword grip." The Projects screen adds it
-          to Claude Code in one click.</p>
-      </div>
-      <img src="images/tasks.png" alt="The task board and the notes sent from Blender" loading="lazy">
-    </article>
-  </section>
-
-  <section class="rule">
-    <h2>Nothing is overwritten silently</h2>
-    <ul>
-      <li>Artbench writes nothing into your Unity project on its own.</li>
-      <li>Every send or pull shows a plan, file by file, and waits for your OK.</li>
-      <li>A file changed on both sides is a conflict that waits for your decision.</li>
-      <li>Replaced copies go to an archive. Nothing is deleted.</li>
-    </ul>
-  </section>
-
-  <section id="install" class="install">
-    <h2>Install</h2>
-    <ol>
-      <li><a href="{{ZIP_URL}}">Download Artbench {{VERSION}} for Windows</a> and unzip it anywhere, but not inside a game project.</li>
-      <li>Double-click <code>Artbench.bat</code>. If Windows SmartScreen warns you, choose More info, then Run anyway.</li>
-      <li>Open <b>Projects</b> and pick your Unity project, and your art folder if you have one.</li>
+  <section id="install" class="install reveal">
+    <p class="kicker">Install</p>
+    <h2>Three steps, <span class="hl">no installer</span></h2>
+    <ol class="steps">
+      <li><b>1</b><div><a href="{{ZIP_URL}}">Download Artbench {{VERSION}} for Windows</a> and unzip it anywhere, but not
+        inside a game project.</div></li>
+      <li><b>2</b><div>Double-click <code>Artbench.bat</code>. If Windows SmartScreen warns you, choose More info, then
+        Run anyway.</div></li>
+      <li><b>3</b><div>Open <strong>Projects</strong> and pick your Unity project, and your art folder if you have one.</div></li>
     </ol>
     <div class="cols">
       <div>
         <h3>Optional</h3>
-        <p><b>Blender 4.2 or newer</b> adds model previews, triangle counts and what changed inside a model.</p>
-        <p><b>The Blender add-on</b> is in the download (<code>blender_addon\artbench_bridge.zip</code>), or
-          <a href="{{ADDON_URL}}">on its own</a>. In Blender: Edit › Preferences › Get Extensions › Install from Disk.</p>
+        <p><strong>Blender 4.2 or newer</strong> adds model previews, triangle counts and what changed inside a model.</p>
+        <p><strong>The Blender add-on</strong> is in the download (<code>blender_addon\artbench_bridge.zip</code>), or
+          <a href="{{ADDON_URL}}">on its own</a>.</p>
       </div>
       <div>
         <h3>Good to know</h3>
@@ -148,9 +217,12 @@
         <p>Settings stay in the Artbench folder. To remove it, delete the folder; nothing else is installed.</p>
       </div>
     </div>
+    <div class="cta again"><a class="btn" href="{{ZIP_URL}}">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Download Artbench {{VERSION}}</a></div>
   </section>
 
-  <section class="tr" lang="tr">
+  <section class="tr reveal" lang="tr">
     <h2>Türkçe</h2>
     <p>Artbench Unity projeni ve yanındaki art klasörünü okur: her varlığın ne olduğunu, neyin kullandığını, neyin hiç
       kullanılmadığını ve son baktığından beri ne değiştiğini gösterir. Modelleri oyuna ve geri, onayladığın bir planla

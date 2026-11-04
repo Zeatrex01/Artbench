@@ -1,5 +1,6 @@
 """Builds the download page for GitHub Pages: site/ with the release to download filled in, plus the pictures the
-README uses (docs/images) and the app's icon. A build tool, not part of the package.
+README uses (docs/images), the app's icon and the app's own logo animation (its pencil simulation in js/launch.js, with
+the two modules it imports), so the page draws the logo exactly as the app does. A build tool, not part of the package.
 
     python tools/build_site.py [out_dir] [--tag v0.1.0]     # default out: dist/site, default tag: v<__version__>
 
@@ -16,6 +17,7 @@ sys.path.insert(0, ROOT)
 from artbench import __version__  # noqa: E402
 
 REPO = "https://github.com/Zeatrex01/Artbench"
+APP_MODULES = ("launch.js", "icons.js", "i18n.js")                 # the opening and what it imports
 TAG = re.compile(r"^v(\d+\.\d+\.\d+(?:[a-z0-9.-]*)?)$")
 
 
@@ -31,6 +33,9 @@ def build(out_dir, tag=None):
     shutil.copytree(os.path.join(ROOT, "site"), out_dir)
     shutil.copytree(os.path.join(ROOT, "docs", "images"), os.path.join(out_dir, "images"))
     shutil.copy2(os.path.join(ROOT, "artbench", "web", "img", "favicon.svg"), os.path.join(out_dir, "favicon.svg"))
+    os.makedirs(os.path.join(out_dir, "js", "app"))
+    for name in APP_MODULES:
+        shutil.copy2(os.path.join(ROOT, "artbench", "web", "js", name), os.path.join(out_dir, "js", "app", name))
     open(os.path.join(out_dir, ".nojekyll"), "w").close()               # serve the files as they are
     index = os.path.join(out_dir, "index.html")
     with open(index, encoding="utf-8") as f:
