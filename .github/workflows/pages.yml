@@ -1,0 +1,49 @@
+# The download page on GitHub Pages (https://zeatrex01.github.io/Artbench/): site/ with the newest published
+# release filled in, so the Download button always fetches a zip that exists. It is rebuilt when the page or its
+# pictures change on main, after every release, and by hand (Actions > pages > Run workflow).
+# One-time setup: Settings > Pages > Source: GitHub Actions.
+name: pages
+
+on:
+  push:
+    branches: [main]
+    paths: ["site/**", "docs/images/**", "tools/build_site.py", "artbench/web/img/favicon.svg"]
+  workflow_run:
+    workflows: [release]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build the page for the newest release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG=$(gh release list --limit 1 --exclude-drafts --json tagName -q '.[0].tagName')
+          if [ -z "$TAG" ]; then echo "No published release yet: nothing to download." >&2; exit 1; fi
+          python tools/build_site.py _site --tag "$TAG"
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4

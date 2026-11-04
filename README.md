@@ -4,6 +4,8 @@
 
 **The art side of your game in one place, for you and for your AI tools.**
 
+**[zeatrex01.github.io/Artbench](https://zeatrex01.github.io/Artbench/)** · download for Windows
+
 [![build](https://github.com/Zeatrex01/Artbench/actions/workflows/build.yml/badge.svg)](https://github.com/Zeatrex01/Artbench/actions/workflows/build.yml)
 ![License: Apache-2.0 with Commons Clause](https://img.shields.io/badge/license-Apache--2.0%20%2B%20Commons%20Clause-e8a33d)
 ![Python 3.11+, standard library only](https://img.shields.io/badge/python-3.11%2B%20%C2%B7%20no%20dependencies-e8a33d)
@@ -85,8 +87,8 @@ Claude Code in one click and gives the lines for Gemini CLI and Codex.
 
 ## Get it
 
-**Windows, ready to run.** Download `Artbench-<version>-windows-x64.zip` from this repository's
-[Releases](../../releases), unzip it anywhere (not inside a game project) and double-click `Artbench.bat`. Python is
+**Windows, ready to run.** Download `Artbench-<version>-windows-x64.zip` from the
+[download page](https://zeatrex01.github.io/Artbench/) or this repository's [Releases](../../releases), unzip it anywhere (not inside a game project) and double-click `Artbench.bat`. Python is
 inside; there is nothing to install. The `README.txt` in the folder covers the rest.
 
 **From source**, on Windows, Linux or macOS (macOS untested). You need Python 3.11 or newer. Artbench uses the standard library only: nothing to install. Blender is optional; it
@@ -160,7 +162,8 @@ The team side comes after those. The roadmap is in [`ARCHITECTURE.md`](ARCHITECT
 
 `Build.bat` (or `python tools/build_portable.py`) makes the Windows download in `dist/`. At every push, CI builds it
 on Windows, starts it with its own Python and checks that it answers; a version tag publishes it as a Release (see
-[`CONTRIBUTING.md`](CONTRIBUTING.md)).
+[`CONTRIBUTING.md`](CONTRIBUTING.md)). The download page is `site/`; `python tools/build_site.py` builds it into
+`dist/site`, and after every release it is published with GitHub Pages pointing at the new zip.
 
 ## License
 

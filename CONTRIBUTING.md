@@ -24,5 +24,6 @@ Bugs and ideas: open an issue with what you did, what you expected and what happ
    version is published as a pre-release.
 3. The `release` workflow builds the Windows download on Windows, starts it with its own Python, and only when it
    answers creates the GitHub Release with `Artbench-<version>-windows-x64.zip` and the Blender add-on attached.
+4. The `pages` workflow then rebuilds the download page (`site/`) so its button fetches the new zip.
 
 To build by hand: double-click `Build.bat` (Windows), or `python tools/build_portable.py`; the zip lands in `dist/`.
