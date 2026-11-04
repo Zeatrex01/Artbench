@@ -556,8 +556,8 @@ command (`python -m artbench.mcp_server` with `PYTHONPATH=<Artbench>`): Claude C
 `mcpServers.artbench` in `~/.gemini/settings.json`; Codex `[mcp_servers.artbench]` in `~/.codex/config.toml`
 (README_TR has the exact snippets). Tools that cannot speak MCP use the command line above.
 
-**Answers for an AI are lean** (owner, 2026-11-04: Artbench stays open in the background for AI tools, so every
-character an agent reads counts). The MCP server answers compact JSON; list answers carry brief rows and small pages
+**Answers for an AI are lean**: Artbench stays open in the background for AI tools, so every character an agent
+reads counts. The MCP server answers compact JSON; list answers carry brief rows and small pages
 (25) with totals; `overview` is the map to start from (kinds, usage, the fullest folders, task counts), and an
 agent asks `asset` for one entry in full. Tool texts are short (project mode's tools/list about 7 300 characters,
 every tool about 12 000); the long explanations live here. Tests hold both budgets.
