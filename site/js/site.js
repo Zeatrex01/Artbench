@@ -6,7 +6,8 @@
 import { makeMotion, show } from './app/launch.js';
 import { markSvg } from './app/icons.js';
 
-window.__artbench = true;                                     // the page's fallback in index.html stands down
+window.__artbench = true;                                     // the page's fallback in index.html stands down,
+document.documentElement.classList.add('js');                 // or, on a slow line that already gave up, is undone
 const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
