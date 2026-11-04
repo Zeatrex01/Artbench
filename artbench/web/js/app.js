@@ -12,7 +12,7 @@ import { renderInspector, resetMeta } from './inspector.js';
 import { viewTasks, bindTasks } from './tasks.js';
 import { viewEngine, viewPlaceholders, viewLayout, viewBlends, viewChanges, viewHistory, viewUnsorted, bindViews } from './views.js';
 import { viewGraph, initGraph } from './graph.js';
-import { viewScenes, loadScenes } from './scenes.js';
+import { viewScenes, loadScenes, bindScenes } from './scenes.js';
 import { openProjects, closeProjects, isProjectsOpen } from './projects.js';
 import { playLaunch } from './launch.js';
 
@@ -92,6 +92,7 @@ function renderView() {
   el.innerHTML = (views[S.view] || (isProject() ? viewCatalog : viewLibrary))();
   observeThumbs(el);
   bindCommon(el); bindViews(el); bindTasks(el); if (isProject()) bindCatalog(el);
+  if (S.view === 'scenes') bindScenes(el);
   if (S.view === 'graph') initGraph();
   el.scrollTop = keepScroll;
 }

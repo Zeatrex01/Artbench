@@ -33,7 +33,7 @@ js/projects.js      the projects hub: connect (Game project only, default, or ga
                     the AI connection card; the machine check
 js/catalog.js       project mode: art catalog by kind, unused view, asset card, kind navigation, previews and
                     model statistics in rows and cards, sort, hidden folders, Open in Blender
-js/scenes.js        project mode: scenes and what each one uses
+js/scenes.js        scenes and what each one uses: the list (filterable) beside one scene's assets by kind
 js/i18n.js          every user-visible string, English and Turkish; t(key, vars)
 ```
 The server serves these as static files; `index.html` loads `js/app.js` as an ES module.
@@ -128,5 +128,10 @@ History, Unsorted and Graph are not shown; the card has no send, pull, state bar
   muted; a click cycles it) and a high task has a red left edge. Cards keep the server's order: priority, then
   oldest. The add row has title, priority, asset (the catalog in project mode) and note. Tasks an AI adds over MCP
   appear on the next poll.
+- **Scenes**: one scene at a time. A sticky list on the left (filter box, each scene with its folder, how many assets it
+  uses, a green dot when the Unity bridge reported it, an amber one for unsaved changes); on the right the selected
+  scene: its name, path and source chip, a row of figures between hairlines (All, then one per kind; a click narrows
+  the list to that kind), then its assets grouped by kind in columns, each with its preview or kind icon, folder and
+  ×count. Below 1100px the list sits above the scene.
 - **Changes**: a bar with how many are new since the last Mark as seen and the button, then New and Earlier
   timelines; a moved asset shows old path → new path.

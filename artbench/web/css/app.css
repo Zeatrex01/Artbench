@@ -439,6 +439,53 @@ pre.tree { background: var(--s2); border: 1px solid var(--line); border-radius: 
 .srow .ellip { flex: 1; min-width: 0; }
 .srow .sub { color: var(--muted); font-size: 11.5px; }
 #view[data-view="scenes"] > .callout { margin-bottom: 16px; }
+/* scenes: the list on the left, one scene on the right (its kinds as figures, its assets by kind, in columns) */
+.scn { display: grid; grid-template-columns: 260px 1fr; gap: 20px; align-items: start; }
+.scn-list { position: sticky; top: 0; max-height: calc(100vh - 150px); display: flex; flex-direction: column; background: var(--s1);
+  border: 1px solid var(--line); border-radius: var(--r2); overflow: hidden; }
+.scn-filter { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+.scn-filter svg { width: 14px; height: 14px; stroke: var(--dim); flex: none; }
+.scn-filter input { flex: 1; min-width: 0; background: transparent; border: 0; padding: 4px 0; font-size: 12.5px; }
+.scn-items { overflow: auto; padding: 4px; }
+.scn-item { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px; border: 0; border-radius: var(--r1); background: none;
+  color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.scn-item:hover { background: var(--s2); }
+.scn-item.on { background: var(--accent-soft); }
+.scn-item[hidden] { display: none; }
+.scn-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.scn-txt b { font-weight: 600; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.scn-txt span { font-size: 11px; color: var(--dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.scn-n { font: 11.5px var(--mono); color: var(--muted); }
+.scn-item.on .scn-n { color: var(--text); }
+.scn-detail { min-width: 0; }
+.scn-head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.scn-head .chip { flex: none; }
+.scn-title { min-width: 0; }
+.scn-title h3 { margin: 0; font-size: 18px; font-weight: 600; color: var(--text-strong); }
+.scn-title .mono { font-size: 11.5px; color: var(--dim); }
+.kicon.lg { width: 38px; height: 38px; }
+.kicon.lg svg { width: 20px; height: 20px; }
+.scn-figs { display: flex; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); margin-bottom: 18px; overflow-x: auto; }
+.scn-fig { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 10px 18px 10px 0; margin-right: 18px; border: 0;
+  border-right: 1px solid var(--line); background: none; color: var(--muted); font: inherit; cursor: pointer; }
+.scn-fig:last-child { border-right: 0; }
+.scn-fig b { font-size: 20px; font-weight: 600; color: var(--text); line-height: 1.1; }
+.scn-fig span { font-size: 11.5px; }
+.scn-fig:hover b { color: var(--text-strong); }
+.scn-fig.on b { color: var(--accent); }
+.scn-fig.on span { color: var(--text); }
+.scn-group { margin-bottom: 18px; }
+.scn-ghead { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 12.5px; }
+.scn-ghead .cnt { color: var(--dim); font: 11.5px var(--mono); }
+.scn-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 2px 10px; }
+.scn-grid .srow { padding: 5px 8px; }
+.scn-grid .srow .thumb.sq, .scn-grid .srow .kicon { width: 30px; height: 30px; flex: none; }
+.scn-grid .srow .ellip { display: flex; flex-direction: column; }
+.scn-grid .srow .name { font-weight: 500; overflow: hidden; text-overflow: ellipsis; }
+.scn-grid .srow .sub { overflow: hidden; text-overflow: ellipsis; }
+.srow .times { font: 11px var(--mono); color: var(--muted); }
+.scn-none { font-size: 12.5px; padding: 8px 0; }
+@media (max-width: 1100px) { .scn { grid-template-columns: 1fr; } .scn-list { position: static; max-height: 260px; } }
 .pkgpick { display: flex; flex-direction: column; gap: 4px; margin: 2px 0 6px 22px; font-size: 11.5px; min-width: 0; }
 .pkgpick select { width: 100%; min-width: 0; text-overflow: ellipsis; }
 .doctor .checks-list, .mcp .checks-list { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
