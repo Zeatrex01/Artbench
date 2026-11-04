@@ -1,6 +1,8 @@
 // The download page's motion. The logo is drawn by the app's own pencil simulation (app/launch.js, copied in by
-// tools/build_site.py), the tour types a question and shows the view that answers it, sections slide in once, and the
-// terminal types an MCP exchange. Without this script, or under reduced motion, the page is simply all there.
+// tools/build_site.py); everything below it moves with the scroll: the hero drifts away, sections rise and slide in as
+// they come up (and back as they go), the tour is pinned while the page scrolls through its six questions, a pencil
+// line along the top bar follows the reader, and the terminal types an MCP exchange. Without this script, or under
+// reduced motion, the page is simply all there.
 import { makeMotion, show } from './app/launch.js';
 import { markSvg } from './app/icons.js';
 
@@ -9,6 +11,7 @@ const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const frame = () => new Promise(r => requestAnimationFrame(r));
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 // --- the logo: a pencil draws the trestle, lies down on it, and the name rises --------------------------------------
 const lock = $('.lock');
@@ -32,76 +35,75 @@ async function draw() {
 if (calm) show(mark, null); else { show(mark, makeMotion()(0)); draw(); }
 lock.addEventListener('click', () => { if (!calm) draw(); });
 
-// --- sections come in once ------------------------------------------------------------------------------------------
+// --- once: the hero's text rises, the terminal starts typing, the rule's checks are drawn ----------------------------
 const seen = new IntersectionObserver(entries => entries.forEach(e => {
   if (!e.isIntersecting) return;
   e.target.classList.add('in');
   seen.unobserve(e.target);
   if (e.target.id === 'ai') typeTerminal();
 }), { threshold: .18 });
-$$('.hero, .reveal').forEach(el => seen.observe(el));
+$$('.hero, .sc').forEach(el => seen.observe(el));
 
-// --- the tour: ask, then show where Artbench answers it --------------------------------------------------------------
-const tabs = $$('.tabs button'), views = $$('.view'), typed = $('.typed'), win = $('.window');
-const HOLD_MS = 6000;
-let current = 0, token = 0, paused = false, visible = true;
+// --- scroll: every section moves with the page, both ways --------------------------------------------------------------
+// --e on a section: 0 while its top is at the bottom of the window, 1 once it is two thirds up; --s on the hero: how far
+// it has scrolled away; --pg on the page: how far down the reader is (the pencil line under the bar).
+const root = document.documentElement, hero = $('.hero'), moving = $$('.sc');
+const clamp01 = x => Math.max(0, Math.min(1, x));
+let queued = false;
+function onScroll() {
+  queued = false;
+  const vh = innerHeight;
+  root.style.setProperty('--pg', (scrollY / Math.max(1, root.scrollHeight - vh)).toFixed(4));
+  hero.style.setProperty('--s', clamp01(scrollY / hero.offsetHeight).toFixed(4));
+  for (const el of moving) el.style.setProperty('--e', clamp01((vh - el.getBoundingClientRect().top) / (vh * .66)).toFixed(4));
+  scrollTour();
+}
+const queue = () => { if (!queued) { queued = true; requestAnimationFrame(onScroll); } };
 
-function select(i) {
-  current = i;
-  tabs.forEach((b, j) => { b.setAttribute('aria-selected', String(j === i)); b.tabIndex = j === i ? 0 : -1; });
+// --- the tour: pinned while the page scrolls through it; each stretch asks a question and shows its answer ---------
+const tour = $('#tour'), pin = $('.tour-pin'), tabs = $$('.tabs button'), views = $$('.view'), typed = $('.typed'), win = $('.window');
+let current = -1, token = 0;
+
+function markTab(i) { tabs.forEach((b, j) => { b.setAttribute('aria-selected', String(j === i)); b.tabIndex = j === i ? 0 : -1; }); }
+function showView(i) {
   views.forEach((v, j) => { v.classList.toggle('on', j === i); v.classList.remove('tags'); });
   win.classList.remove('asking');
-  setTimeout(() => views[i].classList.add('tags'), calm ? 0 : 280);
+  setTimeout(() => { if (current === i) views[i].classList.add('tags'); }, calm ? 0 : 260);
 }
-async function wait(ms, me, progress) {                        // a pause that stops while the tour is out of sight
-  let t = 0, last = performance.now();
-  while (t < ms) {
-    await frame();
-    if (me !== token) throw me;
-    const now = performance.now();
-    if (!paused && visible) t += now - last;
-    last = now;
-    if (progress) progress(Math.min(1, t / ms));
-  }
+async function ask(i) {                                        // type the question, then show the view that answers it
+  const me = ++token, text = tabs[i].dataset.q;
+  current = i;
+  markTab(i);
+  if (calm) { typed.textContent = text; showView(i); return; }
+  win.classList.add('asking');
+  while (typed.textContent.length) { typed.textContent = typed.textContent.slice(0, -3); await sleep(8); if (me !== token) return; }
+  for (let n = 1; n <= text.length; n++) { typed.textContent = text.slice(0, n); await sleep(16); if (me !== token) return; }
+  showView(i);
 }
-async function type(text, me) {
-  while (typed.textContent.length) { typed.textContent = typed.textContent.slice(0, -2); await wait(9, me); }
-  for (let n = 1; n <= text.length; n++) { typed.textContent = text.slice(0, n); await wait(text[n - 1] === ' ' ? 45 : 26, me); }
+function stretch() {                                           // the scroll range the tour stays pinned for, per view
+  const top = tour.getBoundingClientRect().top + scrollY - 64;
+  return { top, each: Math.max(1, (tour.offsetHeight - pin.offsetHeight) / tabs.length) };
 }
-async function tour(start, skipTyping) {
-  const me = ++token;
-  let i = start;
-  try {
-    for (;;) {
-      if (skipTyping) skipTyping = false; else { win.classList.add('asking'); await type(tabs[i].dataset.q, me); }
-      select(i);
-      const bar = tabs[i].querySelector('i');
-      await wait(HOLD_MS, me, p => bar.style.setProperty('--p', p));
-      i = (i + 1) % tabs.length;
-      if (calm) { typed.textContent = tabs[i].dataset.q; skipTyping = true; }
-    }
-  } catch (e) { /* a newer run took over */ }
+function scrollTour() {
+  const { top, each } = stretch(), into = scrollY - top;
+  const i = Math.max(0, Math.min(tabs.length - 1, Math.floor(into / each)));
+  tabs.forEach((b, j) => b.querySelector('i').style.setProperty('--p', j === i ? clamp01((into - j * each) / each).toFixed(3) : 0));
+  if (i !== current) ask(i);
 }
-tabs.forEach((b, i) => b.addEventListener('click', () => {
-  typed.textContent = b.dataset.q;
-  tabs[i].querySelector('i').style.setProperty('--p', 0);
-  if (calm) { select(i); return; }
-  select(i);
-  tour(i, true);
+tabs.forEach((b, i) => b.addEventListener('click', () => {    // a tab scrolls the page to its stretch
+  if (calm) { ask(i); return; }
+  const { top, each } = stretch();
+  scrollTo({ top: top + i * each + 2, behavior: 'smooth' });
 }));
 $('.tabs').addEventListener('keydown', e => {
   const d = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
   if (!d) return;
-  const n = (current + d + tabs.length) % tabs.length;
+  const n = Math.max(0, Math.min(tabs.length - 1, current + d));
   tabs[n].focus();
   tabs[n].click();
 });
-win.addEventListener('pointerenter', () => { paused = true; });
-win.addEventListener('pointerleave', () => { paused = false; });
-new IntersectionObserver(([e]) => { visible = e.isIntersecting; }, { threshold: .08 }).observe($('#tour'));
-select(0);
-if (calm) tabs.forEach(b => b.querySelector('i').style.setProperty('--p', 1));
-else { typed.textContent = ''; tour(0); }
+if (calm) ask(0);
+else { typed.textContent = ''; addEventListener('scroll', queue, { passive: true }); addEventListener('resize', queue); onScroll(); }
 
 // --- the terminal: an AI tool asks Artbench --------------------------------------------------------------------------
 const out = $('.term-out'), script = out.textContent.split('\n');
@@ -126,4 +128,3 @@ async function typeTerminal() {
   }
   typing = false;
 }
-const sleep = ms => new Promise(r => setTimeout(r, ms));

@@ -4,7 +4,7 @@
 
 **The art side of your game in one place, for you and for your AI tools.**
 
-**[zeatrex01.github.io/Artbench](https://zeatrex01.github.io/Artbench/)** · download for Windows
+**[artbench.malik3d.page](https://artbench.malik3d.page/)** · download for Windows
 
 [![build](https://github.com/Zeatrex01/Artbench/actions/workflows/build.yml/badge.svg)](https://github.com/Zeatrex01/Artbench/actions/workflows/build.yml)
 ![License: Apache-2.0 with Commons Clause](https://img.shields.io/badge/license-Apache--2.0%20%2B%20Commons%20Clause-e8a33d)
@@ -88,7 +88,7 @@ Claude Code in one click and gives the lines for Gemini CLI and Codex.
 ## Get it
 
 **Windows, ready to run.** Download `Artbench-<version>-windows-x64.zip` from the
-[download page](https://zeatrex01.github.io/Artbench/) or this repository's [Releases](../../releases), unzip it anywhere (not inside a game project) and double-click `Artbench.bat`. Python is
+[download page](https://artbench.malik3d.page/) or this repository's [Releases](../../releases), unzip it anywhere (not inside a game project) and double-click `Artbench.bat`. Python is
 inside; there is nothing to install. The `README.txt` in the folder covers the rest.
 
 **From source**, on Windows, Linux or macOS (macOS untested). You need Python 3.11 or newer. Artbench uses the standard library only: nothing to install. Blender is optional; it

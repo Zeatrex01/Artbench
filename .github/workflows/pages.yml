@@ -1,4 +1,4 @@
-# The download page on GitHub Pages (https://zeatrex01.github.io/Artbench/): site/ with the newest published
+# The download page on GitHub Pages (https://artbench.malik3d.page/): site/ with the newest published
 # release filled in, so the Download button always fetches a zip that exists. It is rebuilt when the page or its
 # pictures change on main, after every release, and by hand (Actions > pages > Run workflow).
 # One-time setup: Settings > Pages > Source: GitHub Actions.

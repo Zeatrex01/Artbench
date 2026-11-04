@@ -7,7 +7,7 @@
 <meta name="description" content="Artbench reads your Unity project and your art folder: what each asset is, what uses it, what nothing uses and what changed. Free for Windows.">
 <meta property="og:title" content="Artbench">
 <meta property="og:description" content="The art side of your game, in one place. A local tool for game artists: Unity, Blender, and your AI tools.">
-<meta property="og:image" content="https://zeatrex01.github.io/Artbench/images/social.png">
+<meta property="og:image" content="https://artbench.malik3d.page/images/social.png">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
@@ -33,6 +33,7 @@
     <a href="{{REPO}}">GitHub</a>
     <a class="btn small" href="{{ZIP_URL}}">Download</a>
   </nav>
+  <div class="pencil" aria-hidden="true"><i></i></div>
 </header>
 
 <main>
@@ -59,83 +60,85 @@
       <a href="{{REPO}}/releases/tag/{{TAG}}">release notes</a></p>
   </section>
 
-  <section id="tour" class="tour">
-    <div class="ask" aria-live="polite">
-      <span class="ask-label">Ask</span>
-      <p class="q"><span class="typed">Which of these textures does nothing use?</span><span class="caret" aria-hidden="true"></span></p>
-    </div>
-    <div class="tabs" role="tablist" aria-label="Artbench views">
-      <button role="tab" aria-selected="true" data-q="Which of these textures does nothing use?"><b>01</b> Unused<i></i></button>
-      <button role="tab" aria-selected="false" data-q="What uses this model, and how heavy is it?"><b>02</b> Catalog<i></i></button>
-      <button role="tab" aria-selected="false" data-q="What changed after that pull?"><b>03</b> Changes<i></i></button>
-      <button role="tab" aria-selected="false" data-q="Is the model in the game the one on my desktop?"><b>04</b> Sync<i></i></button>
-      <button role="tab" aria-selected="false" data-q="Can I send the new one without breaking anything?"><b>05</b> Send<i></i></button>
-      <button role="tab" aria-selected="false" data-q="What's left to fix on the helmet?"><b>06</b> Tasks<i></i></button>
-    </div>
-    <div class="window">
-      <figure class="view on">
-        <div class="shot" style="--mx:-18.3%;--my:-3.9%">
-          <img src="shots/unused.webp" width="2400" height="1500" alt="The Unused view: six assets nothing in the project references">
-          <span class="tag" style="--x:81.1%;--y:20.3%" data-side="l"><span>Nothing references it</span></span>
-          <span class="tag" style="--x:88.2%;--y:49.7%" data-side="bl"><span>A task is already on it</span></span>
-          <span class="tag" style="--x:90.6%;--y:42.2%" data-side="bl"><span>Textures too, with their size</span></span>
-        </div>
-        <figcaption>Assets nothing in the project references get their own list, apart from the ones code loads by
-          name. Check before you delete; Artbench never deletes anything itself.</figcaption>
-      </figure>
-      <figure class="view">
-        <div class="shot" style="--mx:-53.3%;--my:-18.9%">
-          <img src="shots/catalog.webp" width="2400" height="1500" alt="The art catalog with a model's card: its preview, triangles and what uses it" loading="lazy">
-          <span class="tag" style="--x:74.2%;--y:52.1%" data-side="l"><span>Read from the file itself</span></span>
-          <span class="tag" style="--x:74.2%;--y:75.4%" data-side="l"><span>What uses it</span></span>
-          <span class="tag" style="--x:53.5%;--y:34.8%" data-side="b"><span>In use, used by 1</span></span>
-        </div>
-        <figcaption>Every model, texture, material, prefab, scene, animation and sound, with previews, triangle counts
-          and texture sizes. Read from the project's own files; Unity doesn't have to be running.</figcaption>
-      </figure>
-      <figure class="view">
-        <div class="shot" style="--mx:-23.3%;--my:0%">
-          <img src="shots/changes.webp" width="2400" height="1500" alt="The changes since the last look" loading="lazy">
-          <span class="tag" style="--x:92.9%;--y:19.7%" data-side="bl"><span>The list starts again from here</span></span>
-          <span class="tag" style="--x:24.3%;--y:39.4%" data-side="b"><span>Added, changed, moved, removed</span></span>
-        </div>
-        <figcaption>After a pull, a branch switch or a teammate's work: what arrived, in one list. Assets are followed
-          by their id, so a moved file is one line.</figcaption>
-      </figure>
-      <figure class="view">
-        <div class="shot" style="--mx:-56.5%;--my:-38.9%">
-          <img src="shots/library.webp" width="2400" height="1500" alt="A model's sync panel: changed on the desktop, unchanged in Unity" loading="lazy">
-          <span class="tag" style="--x:75.8%;--y:73.3%" data-side="l"><span>Your copy is newer</span></span>
-          <span class="tag" style="--x:75.8%;--y:89.9%" data-side="l"><span>Send it, with a plan</span></span>
-          <span class="tag" style="--x:74.2%;--y:54.6%" data-side="l"><span>Your folder and the game, paired</span></span>
-        </div>
-        <figcaption>Keep your FBX, Blender and texture files in your own folder. Artbench pairs each one with its copy in
-          the game and tells you which side is newer.</figcaption>
-      </figure>
-      <figure class="view">
-        <div class="shot" style="--mx:-28.3%;--my:-23.9%">
-          <img src="shots/send-plan.webp" width="2400" height="1500" alt="Sending a changed model to Unity: the plan to confirm" loading="lazy">
-          <span class="tag" style="--x:33.8%;--y:49.3%" data-side="l"><span>The old copy is archived</span></span>
-          <span class="tag" style="--x:33.8%;--y:55.9%" data-side="l"><span>.meta stays: references keep working</span></span>
-          <span class="tag" style="--x:66.8%;--y:62.7%" data-side="r"><span>Nothing moves until you say so</span></span>
-        </div>
-        <figcaption>Send a model to Unity, pull one back, or bring a Unity model into your folder: always with a plan,
-          file by file, that you confirm first.</figcaption>
-      </figure>
-      <figure class="view">
-        <div class="shot" style="--mx:-13.3%;--my:-18.9%">
-          <img src="shots/tasks.webp" width="2400" height="1500" alt="The task board and the notes sent from Blender" loading="lazy">
-          <span class="tag" style="--x:19.7%;--y:33.6%" data-side="l"><span>Tied to Helmet.fbx</span></span>
-          <span class="tag" style="--x:18.5%;--y:73.3%" data-side="t"><span>Notes written in Blender</span></span>
-          <span class="tag" style="--x:63.1%;--y:31%" data-side="b"><span>One click: Start, Finish</span></span>
-        </div>
-        <figcaption>Tasks with priorities, tied to an asset when you want, beside the notes you pinned in Blender.
-          Your AI tool sees the same board.</figcaption>
-      </figure>
+  <section id="tour" class="tour sc">
+    <div class="tour-pin">
+      <div class="ask" aria-live="polite">
+        <span class="ask-label">Ask</span>
+        <p class="q"><span class="typed">Which of these textures does nothing use?</span><span class="caret" aria-hidden="true"></span></p>
+      </div>
+      <div class="tabs" role="tablist" aria-label="Artbench views">
+        <button role="tab" aria-selected="true" data-q="Which of these textures does nothing use?"><b>01</b> Unused<i></i></button>
+        <button role="tab" aria-selected="false" data-q="What uses this model, and how heavy is it?"><b>02</b> Catalog<i></i></button>
+        <button role="tab" aria-selected="false" data-q="What changed after that pull?"><b>03</b> Changes<i></i></button>
+        <button role="tab" aria-selected="false" data-q="Is the model in the game the one on my desktop?"><b>04</b> Sync<i></i></button>
+        <button role="tab" aria-selected="false" data-q="Can I send the new one without breaking anything?"><b>05</b> Send<i></i></button>
+        <button role="tab" aria-selected="false" data-q="What's left to fix on the helmet?"><b>06</b> Tasks<i></i></button>
+      </div>
+      <div class="window">
+        <figure class="view on">
+          <div class="shot" style="--mx:-18.3%;--my:-3.9%">
+            <img src="shots/unused.webp" width="2400" height="1500" alt="The Unused view: six assets nothing in the project references">
+            <span class="tag" style="--x:81.1%;--y:20.3%" data-side="l"><span>Nothing references it</span></span>
+            <span class="tag" style="--x:88.2%;--y:49.7%" data-side="bl"><span>A task is already on it</span></span>
+            <span class="tag" style="--x:90.6%;--y:42.2%" data-side="bl"><span>Textures too, with their size</span></span>
+          </div>
+          <figcaption>Assets nothing in the project references get their own list, apart from the ones code loads by
+            name. Check before you delete; Artbench never deletes anything itself.</figcaption>
+        </figure>
+        <figure class="view">
+          <div class="shot" style="--mx:-53.3%;--my:-18.9%">
+            <img src="shots/catalog.webp" width="2400" height="1500" alt="The art catalog with a model's card: its preview, triangles and what uses it" loading="lazy">
+            <span class="tag" style="--x:74.2%;--y:52.1%" data-side="l"><span>Read from the file itself</span></span>
+            <span class="tag" style="--x:74.2%;--y:75.4%" data-side="l"><span>What uses it</span></span>
+            <span class="tag" style="--x:53.5%;--y:34.8%" data-side="b"><span>In use, used by 1</span></span>
+          </div>
+          <figcaption>Every model, texture, material, prefab, scene, animation and sound, with previews, triangle counts
+            and texture sizes. Read from the project's own files; Unity doesn't have to be running.</figcaption>
+        </figure>
+        <figure class="view">
+          <div class="shot" style="--mx:-23.3%;--my:0%">
+            <img src="shots/changes.webp" width="2400" height="1500" alt="The changes since the last look" loading="lazy">
+            <span class="tag" style="--x:92.9%;--y:19.7%" data-side="bl"><span>The list starts again from here</span></span>
+            <span class="tag" style="--x:24.3%;--y:39.4%" data-side="b"><span>Added, changed, moved, removed</span></span>
+          </div>
+          <figcaption>After a pull, a branch switch or a teammate's work: what arrived, in one list. Assets are followed
+            by their id, so a moved file is one line.</figcaption>
+        </figure>
+        <figure class="view">
+          <div class="shot" style="--mx:-56.5%;--my:-38.9%">
+            <img src="shots/library.webp" width="2400" height="1500" alt="A model's sync panel: changed on the desktop, unchanged in Unity" loading="lazy">
+            <span class="tag" style="--x:75.8%;--y:73.3%" data-side="l"><span>Your copy is newer</span></span>
+            <span class="tag" style="--x:75.8%;--y:89.9%" data-side="l"><span>Send it, with a plan</span></span>
+            <span class="tag" style="--x:74.2%;--y:54.6%" data-side="l"><span>Your folder and the game, paired</span></span>
+          </div>
+          <figcaption>Keep your FBX, Blender and texture files in your own folder. Artbench pairs each one with its copy in
+            the game and tells you which side is newer.</figcaption>
+        </figure>
+        <figure class="view">
+          <div class="shot" style="--mx:-28.3%;--my:-23.9%">
+            <img src="shots/send-plan.webp" width="2400" height="1500" alt="Sending a changed model to Unity: the plan to confirm" loading="lazy">
+            <span class="tag" style="--x:33.8%;--y:49.3%" data-side="l"><span>The old copy is archived</span></span>
+            <span class="tag" style="--x:33.8%;--y:55.9%" data-side="l"><span>.meta stays: references keep working</span></span>
+            <span class="tag" style="--x:66.8%;--y:62.7%" data-side="r"><span>Nothing moves until you say so</span></span>
+          </div>
+          <figcaption>Send a model to Unity, pull one back, or bring a Unity model into your folder: always with a plan,
+            file by file, that you confirm first.</figcaption>
+        </figure>
+        <figure class="view">
+          <div class="shot" style="--mx:-13.3%;--my:-18.9%">
+            <img src="shots/tasks.webp" width="2400" height="1500" alt="The task board and the notes sent from Blender" loading="lazy">
+            <span class="tag" style="--x:19.7%;--y:33.6%" data-side="l"><span>Tied to Helmet.fbx</span></span>
+            <span class="tag" style="--x:18.5%;--y:73.3%" data-side="t"><span>Notes written in Blender</span></span>
+            <span class="tag" style="--x:63.1%;--y:31%" data-side="b"><span>One click: Start, Finish</span></span>
+          </div>
+          <figcaption>Tasks with priorities, tied to an asset when you want, beside the notes you pinned in Blender.
+            Your AI tool sees the same board.</figcaption>
+        </figure>
+      </div>
     </div>
   </section>
 
-  <section class="specs reveal" aria-label="At a glance">
+  <section class="specs sc" aria-label="At a glance">
     <div><b>Local</b><span>runs on your computer; nothing is uploaded</span></div>
     <div><b>11 MB</b><span>Python inside, nothing to install</span></div>
     <div><b>Unity</b><span>read from its own text files</span></div>
@@ -143,7 +146,7 @@
     <div><b>MCP</b><span>Claude Code, Gemini CLI, Codex</span></div>
   </section>
 
-  <section id="blender" class="split reveal">
+  <section id="blender" class="split sc">
     <div class="text">
       <p class="kicker">In Blender</p>
       <h2>Notes that sit <span class="hl">on the model</span></h2>
@@ -155,7 +158,7 @@
     <figure class="frame"><img src="images/blender-notes.gif" width="720" height="480" alt="Note pins beside the objects of a Blender scene" loading="lazy"></figure>
   </section>
 
-  <section id="ai" class="split flip reveal">
+  <section id="ai" class="split flip sc">
     <div class="text">
       <p class="kicker">Your AI tools</p>
       <h2>Ask in words, <span class="hl">get the list</span></h2>
@@ -179,7 +182,7 @@
     </div>
   </section>
 
-  <section class="rule reveal">
+  <section class="rule sc">
     <p class="kicker">The rule</p>
     <h2>Nothing is <span class="hl">overwritten silently</span></h2>
     <ol>
@@ -190,11 +193,11 @@
     </ol>
   </section>
 
-  <section id="film" class="film reveal">
+  <section id="film" class="film sc">
     <video src="assets/artbench-film-720p.mp4" poster="assets/film-poster.jpg" controls preload="none" playsinline aria-label="A 47-second film of Artbench"></video>
   </section>
 
-  <section id="install" class="install reveal">
+  <section id="install" class="install sc">
     <p class="kicker">Install</p>
     <h2>Three steps, <span class="hl">no installer</span></h2>
     <ol class="steps">
@@ -222,7 +225,7 @@
       Download Artbench {{VERSION}}</a></div>
   </section>
 
-  <section class="tr reveal" lang="tr">
+  <section class="tr sc" lang="tr">
     <h2>Türkçe</h2>
     <p>Artbench Unity projeni ve yanındaki art klasörünü okur: her varlığın ne olduğunu, neyin kullandığını, neyin hiç
       kullanılmadığını ve son baktığından beri ne değiştiğini gösterir. Modelleri oyuna ve geri, onayladığın bir planla

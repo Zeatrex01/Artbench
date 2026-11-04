@@ -1,6 +1,6 @@
 /* The Artbench download page, in the app's Workshop look (docs/DESIGN.md): graphite, 1 px lines, small corners, amber
-   for what matters. Motion comes from js/site.js (the logo drawn by the app's own pencil simulation, the tour, the
-   reveals); without it, or under reduced motion, everything is simply there. */
+   for what matters. Motion comes from js/site.js (the logo drawn by the app's own pencil simulation; --s, --e and --pg,
+   which follow the scroll); without it, or under reduced motion, everything is simply there. */
 :root {
   --bg: #161616; --s1: #1b1b1b; --s2: #212121; --s3: #282828;
   --line: rgba(255, 255, 255, .075); --line2: rgba(255, 255, 255, .15);
@@ -12,7 +12,7 @@
 }
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
-body { margin: 0; background: var(--bg); color: var(--text); font: 400 17px/1.6 var(--sans); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 400 17px/1.6 var(--sans); -webkit-font-smoothing: antialiased; overflow-x: clip; }
 a { color: var(--accent2); text-underline-offset: 3px; }
 code { font: 500 .86em var(--mono); background: var(--s2); border: 1px solid var(--line); padding: 1px 6px; border-radius: 2px; }
 img, video { max-width: 100%; display: block; }
@@ -24,8 +24,9 @@ h3 { font: 600 15px var(--sans); color: var(--strong); margin: 0 0 10px; }
 .hl { position: relative; white-space: nowrap; }
 .hl::after { content: ""; position: absolute; left: -2px; right: -4px; bottom: -.06em; height: .1em; min-height: 3px;
   background: var(--accent); border-radius: 2px; transform-origin: 0 50%; transform: rotate(-.6deg); }
-.js .hl::after { transform: rotate(-.6deg) scaleX(0); transition: transform .9s var(--ease) .3s; }
-.js .in .hl::after { transform: rotate(-.6deg) scaleX(1); }
+.js .hero .hl::after { transform: rotate(-.6deg) scaleX(0); transition: transform .9s var(--ease) .3s; }
+.js .hero.in .hl::after { transform: rotate(-.6deg) scaleX(1); }
+.js .sc .hl::after { transform: rotate(-.6deg) scaleX(clamp(0, calc((var(--e, 1) - .3) * 1.8), 1)); }   /* drawn as you scroll */
 
 /* ---- top ---- */
 .top { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; gap: 16px;
@@ -81,8 +82,37 @@ h1 { font: 700 clamp(32px, 5vw, 60px)/1.08 var(--display); font-stretch: 112%; l
 .js .hero.in .cta { transition-delay: .16s; }
 .js .hero.in .fine { transition-delay: .24s; }
 
+/* ---- motion that follows the scroll (js/site.js sets --s, --e, --pg; without it they stay at rest) ---- */
+.pencil { position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; pointer-events: none; }
+.pencil i { position: absolute; left: 0; top: 0; height: 2px; width: calc(var(--pg, 0) * 100%); background: var(--accent); }
+.pencil i::after { content: ""; position: absolute; right: -9px; top: -3px; border-left: 9px solid var(--accent);
+  border-top: 4px solid transparent; border-bottom: 4px solid transparent; }     /* the lead, drawing the line */
+.js .hero > :not(.mat) { translate: 0 calc(var(--s, 0) * -120px); }
+.js .hero { opacity: calc(1 - var(--s, 0) * .7); }
+.js .hero .mat { translate: 0 calc(var(--s, 0) * 90px); }
+.js .hero .lock { scale: calc(1 - var(--s, 0) * .12); }
+.js .sc .kicker, .js .sc h2 { translate: 0 calc((1 - var(--e, 1)) * 56px); opacity: calc(var(--e, 1) * 1.6 - .3); }
+.js .sc .text > p:not(.kicker), .js .rule ol, .js .install .cols, .js .tr p { translate: 0 calc((1 - var(--e, 1)) * 90px);
+  opacity: calc(var(--e, 1) * 1.6 - .5); }
+.js .split .frame, .js .split .term { translate: calc((1 - var(--e, 1)) * 140px) calc((1 - var(--e, 1)) * 40px);
+  rotate: calc((1 - var(--e, 1)) * 4deg); opacity: calc(var(--e, 1) * 1.5 - .2); }
+.js .split.flip .term { translate: calc((1 - var(--e, 1)) * -140px) calc((1 - var(--e, 1)) * 40px); rotate: calc((1 - var(--e, 1)) * -4deg); }
+.js .specs div { translate: 0 calc((1 - var(--e, 1)) * 60px); opacity: calc(var(--e, 1) * 1.7 - .4); }
+.js .specs div:nth-child(2) { translate: 0 calc((1 - var(--e, 1)) * 100px); }
+.js .specs div:nth-child(3) { translate: 0 calc((1 - var(--e, 1)) * 140px); }
+.js .specs div:nth-child(4) { translate: 0 calc((1 - var(--e, 1)) * 180px); }
+.js .specs div:nth-child(5) { translate: 0 calc((1 - var(--e, 1)) * 220px); }
+.js .steps li { translate: 0 calc((1 - var(--e, 1)) * 80px); opacity: calc(var(--e, 1) * 1.7 - .5); }
+.js .steps li:nth-child(2) { translate: 0 calc((1 - var(--e, 1)) * 130px); }
+.js .steps li:nth-child(3) { translate: 0 calc((1 - var(--e, 1)) * 180px); }
+.js .film video { scale: calc(.8 + var(--e, 1) * .2); opacity: calc(var(--e, 1) * 1.4 - .1); }
+
 /* ---- the tour: a question, then the view that answers it ---- */
 .tour { margin-top: 80px !important; }
+.js .tour { height: calc(100vh + 6 * 70vh); }                      /* pinned while the page scrolls six stretches */
+.js .tour-pin { position: sticky; top: 64px; padding-top: 8px; }
+.js .tour .window { width: min(100%, calc((100vh - 300px) * 1.6)); margin-left: auto; margin-right: auto;
+  transform-origin: 50% 0; transform: perspective(1600px) rotateX(calc((1 - var(--e, 1)) * 26deg)) scale(calc(.86 + var(--e, 1) * .14)); }
 .ask { display: flex; align-items: baseline; justify-content: center; gap: 14px; min-height: 1.6em; margin: 0 0 20px; }
 .ask-label { font: 500 12px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
 .q { margin: 0; font: 600 clamp(20px, 2.6vw, 30px)/1.3 var(--display); font-stretch: 108%; color: var(--strong); }
@@ -191,11 +221,10 @@ h1 { font: 700 clamp(32px, 5vw, 60px)/1.08 var(--display); font-stretch: 112%; l
 footer { max-width: 1200px; margin: 80px auto 0; padding: 28px 16px 48px; border-top: 1px solid var(--line); color: var(--dim); font-size: 14px; }
 footer b { color: var(--muted); font-weight: 600; }
 
-/* sections slide in once */
-.js .reveal { opacity: 0; transform: translateY(28px); transition: opacity .8s var(--ease), transform .8s var(--ease); }
-.js .reveal.in { opacity: 1; transform: none; }
 
 @media (max-width: 900px) {
+  .js .tour { height: calc(100vh + 6 * 60vh); }
+  .js .split .frame, .js .split .term, .js .split.flip .term { translate: 0 calc((1 - var(--e, 1)) * 60px); rotate: none; }
   nav a:not(.btn) { display: none; }
   .split, .split.flip { grid-template-columns: 1fr; gap: 24px; margin-top: 96px !important; }
   .split.flip .text { order: 0; }

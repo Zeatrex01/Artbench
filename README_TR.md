@@ -283,7 +283,7 @@ yazılır; elle de düzenlenebilir.
 `Build.bat`'a çift tıkla (ya da `python tools/build_portable.py`): kendi Python'unu taşıyan
 `dist\Artbench-<sürüm>-windows-x64.zip` oluşur ve `dist` klasörü açılır. Yayınlamak için `artbench/__init__.py`'deki
 sürümü ayarla ve aynı sürümle bir etiket gönder (`git tag v0.1.0`, `git push origin v0.1.0`; 0.x sürümler önizleme olarak yayımlanır): GitHub paketi Windows'ta
-kurar, dener ve Releases sayfasına koyar. İndirme sayfası (https://zeatrex01.github.io/Artbench/, kaynağı `site/`)
+kurar, dener ve Releases sayfasına koyar. İndirme sayfası (https://artbench.malik3d.page/, kaynağı `site/`)
 her yayından sonra yeni zip'i gösterecek şekilde GitHub Pages ile kendiliğinden güncellenir.
 
 ## Lisans
