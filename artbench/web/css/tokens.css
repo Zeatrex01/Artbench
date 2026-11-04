@@ -1,0 +1,33 @@
+/* Design tokens: the only place values live (see docs/DESIGN.md). Workshop: graphite, dense, quiet; amber marks the
+   selection; status colours are muted and always paired with a shape. */
+:root {
+  --bg: #161616;
+  --s1: #1b1b1b; --s2: #212121; --s3: #282828; --s4: #303030;
+  --line: rgba(255, 255, 255, .075); --line2: rgba(255, 255, 255, .15);
+  --text: #e4e4e4; --muted: #a8a8a8; --dim: #878787;
+  --accent: #e8a33d; --accent2: #f0b75e; --accent-soft: rgba(232, 163, 61, .13);
+  --ok: #8fbf7a; --warn: #d98c52; --bad: #e0705f; --info: #79a6dc; --violet: #a993d9; --pink: #d48aab; --teal: #6db8b1;
+  --ok-soft: rgba(143, 191, 122, .12); --warn-soft: rgba(217, 140, 82, .12); --bad-soft: rgba(224, 112, 95, .13);
+  --info-soft: rgba(121, 166, 220, .12); --violet-soft: rgba(169, 147, 217, .12);
+  --font: "IBM Plex Sans", system-ui, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --r1: 2px; --r2: 3px; --r3: 4px;
+  --shadow: 0 8px 24px rgba(0, 0, 0, .45);
+  --shadow-lg: 0 12px 30px rgba(0, 0, 0, .55);
+  --fast: .1s ease;
+  --sidebar: 240px; --inspector: 380px;
+  /* Fixed strengths of the colours above, for borders, overlays and text on tinted surfaces (app.css uses only these). */
+  --text-strong: #fff;
+  --focus-ring: rgba(232, 163, 61, .7);
+  --accent-ink: #f7dcae; --accent-ink2: #f3cf92;
+  --accent-glow: transparent; --accent-count: rgba(232, 163, 61, .2); --accent-wash: rgba(232, 163, 61, .16);
+  --accent-line: rgba(232, 163, 61, .75); --accent-line-soft: rgba(232, 163, 61, .5);
+  --ok-ink: #d3e8c8; --ok-deep: #18230f; --ok-line: rgba(143, 191, 122, .35); --ok-line-strong: rgba(143, 191, 122, .5);
+  --warn-ink: #f2d0b4; --warn-line: rgba(217, 140, 82, .4); --warn-line-strong: rgba(217, 140, 82, .55);
+  --bad-ink: #f5c5bd; --bad-line: rgba(224, 112, 95, .4); --bad-line-toast: rgba(224, 112, 95, .5);
+  --bad-line-strong: rgba(224, 112, 95, .55); --bad-line-conflict: rgba(224, 112, 95, .6);
+  --info-ink: #cfe0f5; --info-line: rgba(121, 166, 220, .4);
+  --glass: rgba(27, 27, 27, .9); --glass-strong: rgba(27, 27, 27, .96); --canvas-glow: #1b1b1b;
+  --scrim: rgba(0, 0, 0, .6); --shadow-side: -16px 0 40px rgba(0, 0, 0, .5); --drop-shadow: rgba(0, 0, 0, .45);
+  --shimmer: rgba(255, 255, 255, .045);
+}

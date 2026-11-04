@@ -1,0 +1,161 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://github.com/Zeatrex01/Artbench/docs/contracts/engine_report.v1.schema.json",
+ "title": "Artbench engine report, schema 1",
+ "description": "What an engine bridge (the Unity editor tool, later Godot) posts to POST /api/v1/engine_report as {project, report}. Informative: Artbench validates in code (live.py) and refuses the whole report, storing nothing, when any part is invalid. Paths are in the engine's own form (Unity 'Assets/...', Godot 'res://...'), either slash; uses whose path is outside that form (built-in resources, Packages/) are dropped and counted. Limits per report (config report_limits): 200 scenes, 200000 nodes, 1000000 uses.",
+ "type": "object",
+ "required": [
+  "schema",
+  "project_path"
+ ],
+ "properties": {
+  "schema": {
+   "const": 1
+  },
+  "bridge": {
+   "type": "string",
+   "description": "name/version of the bridge"
+  },
+  "engine": {
+   "type": "string"
+  },
+  "engine_version": {
+   "type": "string"
+  },
+  "project_path": {
+   "type": "string",
+   "description": "the engine project's root folder (Unity: the folder holding Assets/)"
+  },
+  "time": {
+   "type": "string",
+   "description": "ISO-8601; kept as report_time, freshness uses Artbench's receive time"
+  },
+  "scenes": {
+   "type": "array",
+   "items": {
+    "$ref": "#/$defs/scene"
+   }
+  },
+  "events": {
+   "type": "array",
+   "items": {
+    "$ref": "#/$defs/event"
+   }
+  }
+ },
+ "$defs": {
+  "scene": {
+   "type": "object",
+   "required": [
+    "path"
+   ],
+   "properties": {
+    "path": {
+     "type": "string"
+    },
+    "loaded": {
+     "type": "boolean"
+    },
+    "dirty": {
+     "type": "boolean"
+    },
+    "nodes": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/node"
+     }
+    }
+   }
+  },
+  "node": {
+   "type": "object",
+   "properties": {
+    "id": {
+     "type": [
+      "integer",
+      "string"
+     ]
+    },
+    "parent": {
+     "type": [
+      "integer",
+      "string",
+      "null"
+     ]
+    },
+    "name": {
+     "type": "string"
+    },
+    "kind": {
+     "type": "string",
+     "description": "open: gameobject, prefab_instance, ui, ..."
+    },
+    "uses": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/use"
+     },
+     "description": "the node's own direct references only"
+    }
+   }
+  },
+  "use": {
+   "type": "object",
+   "required": [
+    "id",
+    "path",
+    "kind"
+   ],
+   "properties": {
+    "id": {
+     "type": "string",
+     "description": "the engine's asset id (Unity guid, Godot uid); empty when unknown"
+    },
+    "path": {
+     "type": "string"
+    },
+    "kind": {
+     "type": "string"
+    }
+   }
+  },
+  "event": {
+   "type": "object",
+   "required": [
+    "type",
+    "path"
+   ],
+   "properties": {
+    "type": {
+     "enum": [
+      "imported",
+      "moved",
+      "deleted"
+     ]
+    },
+    "path": {
+     "type": "string"
+    },
+    "from": {
+     "type": "string",
+     "description": "moved only: where the asset was before (required for moved)"
+    },
+    "time": {
+     "type": "string"
+    }
+   },
+   "if": {
+    "properties": {
+     "type": {
+      "const": "moved"
+     }
+    }
+   },
+   "then": {
+    "required": [
+     "from"
+    ]
+   }
+  }
+ }
+}

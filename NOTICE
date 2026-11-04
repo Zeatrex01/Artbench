@@ -1,0 +1,14 @@
+Artbench
+Copyright 2026 Zeatrex01
+
+Artbench is licensed under the Apache License, Version 2.0, with the Commons Clause License Condition v1.0 (see
+LICENSE). In plain words: you may use it, change it and share it, for yourself and for your work, as long as you
+credit it; you may not sell it, or a product or service whose value comes mainly from it.
+
+When you share Artbench or something based on it, keep this NOTICE and the LICENSE, and credit it as
+"Artbench by Zeatrex01".
+
+The Blender add-on in blender_addon/ is under the Apache License, Version 2.0 alone: Blender add-ons must stay
+compatible with Blender's GPL licence, which a no-sale condition is not.
+
+Third-party notices (Lucide icons, fonts loaded at run time): see THIRD_PARTY_NOTICES.md.

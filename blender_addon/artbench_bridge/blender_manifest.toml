@@ -1,0 +1,17 @@
+schema_version = "1.0.0"
+
+id = "artbench_bridge"
+version = "0.3.0"
+name = "Artbench Bridge"
+tagline = "Notes pinned to objects in the .blend, with a link to Artbench"
+maintainer = "Zeatrex01"
+type = "add-on"
+website = "https://github.com/Zeatrex01/Artbench"
+tags = ["Pipeline", "Import-Export"]
+
+blender_version_min = "4.2.0"
+
+license = ["SPDX:Apache-2.0"]
+
+[permissions]
+network = "Talks to the Artbench server running on this machine (127.0.0.1)"

@@ -1,0 +1,47 @@
+# The public repository's CI: at every push to main and every pull request, build the Windows download on Windows,
+# start it with its own (embeddable) Python and check that it answers; the zip is kept as an artifact of the run.
+# (The test suite runs in the development repository.)
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  # The build people download: made on Windows, started with its own (embeddable) Python, asked whether it answers,
+  # and kept as an artifact of the run (Actions > the run > Artifacts).
+  portable:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build the portable folder
+        run: python tools/build_portable.py
+      - name: Start it with its own Python and ask it
+        shell: pwsh
+        run: |
+          $zip = Get-ChildItem dist/Artbench-*-windows-x64.zip | Select-Object -First 1
+          Expand-Archive $zip.FullName -DestinationPath "$env:RUNNER_TEMP/p"
+          $app = "$env:RUNNER_TEMP/p/Artbench"
+          & "$app/python/python.exe" -c "import artbench.server, artbench.mcp_server, artbench.cli, artbench.app_window; print('imports ok')"
+          if ($LASTEXITCODE -ne 0) { throw "the package does not import with the embeddable Python" }
+          $p = Start-Process -FilePath "$app/python/python.exe" -ArgumentList "-m", "artbench", "--no-browser", "--port", "8799" -WorkingDirectory $app -PassThru
+          $answer = $null
+          for ($i = 0; $i -lt 30 -and -not $answer; $i++) {
+            Start-Sleep -Seconds 1
+            try { $answer = Invoke-RestMethod -Uri http://127.0.0.1:8799/api/alive -TimeoutSec 2 } catch { }
+          }
+          $page = $null
+          if ($answer) { $page = Invoke-WebRequest -Uri http://127.0.0.1:8799/ -UseBasicParsing -TimeoutSec 5 }
+          Stop-Process -Id $p.Id -Force
+          if (-not $answer -or $answer.app -ne "artbench") { throw "the portable Artbench did not answer" }
+          if ($page.Content -notmatch "<title>Artbench</title>") { throw "the page did not load" }
+          Write-Host "Artbench $($answer.version) by $($answer.author) answers from the portable folder"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Artbench-windows-x64
+          path: dist/Artbench-*-windows-x64.zip

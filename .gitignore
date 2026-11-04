@@ -1,0 +1,16 @@
+# machine-local
+projects.json
+projects/
+.superpowers/
+.hash_cache.json
+.unity_dump_cache.json
+.thumbs/
+.cache/
+# python
+__pycache__/
+*.pyc
+# editors
+.vscode/
+.idea/
+# build output
+dist/

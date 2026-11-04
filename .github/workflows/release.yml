@@ -1,0 +1,56 @@
+# A version tag publishes the Windows download: push a tag named v<version> (the version in artbench/__init__.py, e.g.
+# v0.1.0) and this builds the portable folder on Windows, starts it with its own Python, asks it whether it answers,
+# and only then creates the GitHub Release with the zip and the Blender add-on attached.
+#   git tag v0.1.0 && git push origin v0.1.0
+# A 0.x version is published as a pre-release (a preview).
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: The tag matches the version
+        shell: pwsh
+        run: |
+          $version = python -c "import artbench; print(artbench.__version__)"
+          if ("v$version" -ne "${{ github.ref_name }}") { throw "tag ${{ github.ref_name }} but artbench.__version__ is $version" }
+      - name: Build the portable folder and the add-on
+        run: |
+          python tools/build_portable.py
+          python -m artbench addon dist/artbench_bridge.zip
+      - name: Start it with its own Python and ask it
+        shell: pwsh
+        run: |
+          $zip = Get-ChildItem dist/Artbench-*-windows-x64.zip | Select-Object -First 1
+          Expand-Archive $zip.FullName -DestinationPath "$env:RUNNER_TEMP/p"
+          $app = "$env:RUNNER_TEMP/p/Artbench"
+          $p = Start-Process -FilePath "$app/python/python.exe" -ArgumentList "-m", "artbench", "--no-browser", "--port", "8799" -WorkingDirectory $app -PassThru
+          $answer = $null
+          for ($i = 0; $i -lt 30 -and -not $answer; $i++) {
+            Start-Sleep -Seconds 1
+            try { $answer = Invoke-RestMethod -Uri http://127.0.0.1:8799/api/alive -TimeoutSec 2 } catch { }
+          }
+          Stop-Process -Id $p.Id -Force
+          if (-not $answer -or $answer.app -ne "artbench") { throw "the portable Artbench did not answer" }
+      - name: Publish the release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $zip = (Get-ChildItem dist/Artbench-*-windows-x64.zip | Select-Object -First 1).FullName
+          $notes = "Windows: download $((Split-Path $zip -Leaf)), unzip it anywhere (not inside a game project) and double-click Artbench.bat. Python is inside; nothing to install. The Blender add-on is inside the folder too, and attached here on its own (Blender 4.2+: Edit > Preferences > Get Extensions > Install from Disk)."
+          $extra = @()
+          if ("${{ github.ref_name }}" -like "v0.*") { $extra += "--prerelease" }   # 0.x: a preview, not a stable release
+          gh release create "${{ github.ref_name }}" $zip dist/artbench_bridge.zip --title "Artbench ${{ github.ref_name }}" --notes $notes @extra
