@@ -13,8 +13,25 @@ def op_projects(_):
 
 
 def _catalog_summary(entry):
-    return {"id": entry["id"], "name": entry["name"], "kind": entry["kind"], "path": entry["path"],
-            "usage": entry["usage"], "used_by_count": len(entry["used_by"])}
+    """The brief row an AI reads first: the id carries the path (engine:<path under Assets/>); artbench_asset has the
+    rest."""
+    return {"id": entry["id"], "kind": entry["kind"], "usage": entry["usage"],
+            "used_by_count": entry.get("used_by_count", len(entry.get("used_by") or []))}
+
+
+def _folders(assets, top=12):
+    """{folder: assets in it} for the fullest folders, fullest first: where the art is, in a few lines."""
+    per = {}
+    for a in assets:
+        per[a["folder"]] = per.get(a["folder"], 0) + 1
+    return dict(sorted(per.items(), key=lambda kv: (-kv[1], kv[0]))[:top])
+
+
+def _task_counts(cfg):
+    board = tasks.load(cfg)
+    out = {s: sum(1 for t in board if t["status"] == s) for s in ("todo", "doing", "done")}
+    out["high_open"] = sum(1 for t in board if t["status"] != "done" and t.get("priority") == "high")
+    return out
 
 
 def _project_overview(cfg, state):
@@ -27,6 +44,7 @@ def _project_overview(cfg, state):
         "layout_issues": len(state["layout_issues"]), "force_text": cat["force_text"],
         "engine_unreachable": state["engine_unreachable"], "engine_scanned": state["engine_scanned"],
         "changes_since_seen": _changes_since_seen(cfg),
+        "folders": _folders(cat["assets"]), "tasks": _task_counts(cfg),
     }
 
 
@@ -55,7 +73,7 @@ def op_overview(args):
         "placeholders_in_use": sum(1 for p in state["placeholders"] if p["usage"] == "used"),
         "layout_issues": len(state["layout_issues"]), "unsorted": len(state["unsorted"]),
         "engine_unreachable": state["engine_unreachable"],
-        "open_tasks": sum(1 for t in tasks.load(cfg) if t["status"] != "done"),
+        "open_tasks": sum(1 for t in tasks.load(cfg) if t["status"] != "done"), "tasks": _task_counts(cfg),
         "engine_scanned": state["engine_scanned"],
         "github": github_link.github_status(cfg),
     }
@@ -64,7 +82,7 @@ def op_overview(args):
 def op_search(args):
     cfg = _cfg(args["project"])
     q = args["query"].lower()
-    limit = int(args.get("limit") or 30)
+    limit = int(args.get("limit") or 20)
     state = scan.scan(cfg)
     if config.is_project_mode(cfg):
         return [_catalog_summary(e) for e in catalog.query(state["catalog"], search=q, limit=limit)["assets"]]
@@ -191,10 +209,13 @@ def op_layout_settings(args):
 
 def op_catalog(args):
     cfg = _cfg(args["project"])
-    return catalog.query(scan.scan(cfg)["catalog"] if config.is_project_mode(cfg)
+    page = catalog.query(scan.scan(cfg)["catalog"] if config.is_project_mode(cfg)
                          else catalog.build(cfg, engines.dump(cfg)),
                          kind=args.get("kind"), usage=args.get("usage"), folder=args.get("folder"),
-                         search=args.get("search"), offset=args.get("offset") or 0, limit=args.get("limit") or 100)
+                         search=args.get("search"), offset=args.get("offset") or 0, limit=args.get("limit") or 25)
+    if args.get("detail") != "full":                         # brief rows unless the whole entry is asked for
+        page["assets"] = [_catalog_summary(a) for a in page["assets"]]
+    return page
 
 
 def _asset_id(cfg, args, state):

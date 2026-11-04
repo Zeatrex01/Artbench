@@ -49,7 +49,8 @@ def handle(request):
             return _error(rid, -32602, f"unknown tool {name}")
         try:
             value = ops.call(HANDLERS[name], params.get("arguments") or {})
-            result = {"content": [{"type": "text", "text": json.dumps(value, ensure_ascii=False, indent=1)}], "isError": False}
+            text = json.dumps(value, ensure_ascii=False, separators=(",", ":"))    # compact: an AI pays per character
+            result = {"content": [{"type": "text", "text": text}], "isError": False}
         except ops.OpError as e:  # the agent gets the code and the message
             result = {"content": [{"type": "text", "text": f"{e.code}: {e.message}"}], "isError": True}
         except (TypeError, ValueError) as e:  # a result JSON cannot carry: the server keeps answering

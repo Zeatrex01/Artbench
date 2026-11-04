@@ -64,10 +64,16 @@ animator bad, data muted.
 
 ## Layout
 
-- **Sidebar 240px**: brand (the Trestle mark, amber, + "Artbench"), project pill (select), nav with icons and counts
-  (Library, Engine only, Placeholders, Tasks, Layout, Graph, Blender sources, Changes, History, Unsorted when >0;
-  in project mode Art catalog, Tasks, Unused, Placeholders, Scenes, Changes, Layout), category → set tree and
-  filter pills (library only), footer: Projects, language, scan stamps. Turkish names come from `i18n.js`.
+- **Sidebar 240px**: brand (the Trestle mark, amber, + "Artbench"), project pill (select), Connect a project, nav with
+  icons and counts. Tasks comes first: people keep Artbench open beside their AI tools and look at the board most.
+  Art mode: Tasks, Library, Engine only, Changes, Scenes, then under **More** Placeholders, Layout, Graph, Blender
+  sources, History, Unsorted (when >0). Project mode: Tasks, Art catalog, Unused, Changes, Scenes, then under More
+  Placeholders and Layout. More stays open while one of its views is open, remembers being opened, and shows a dot
+  when a view under it has something to look at. A project still opens on its assets (catalog or library) when the
+  remembered view is not one of its own. Then the category → set tree and filter pills (library only), footer:
+  Projects, language, scan stamps. Turkish names come from `i18n.js`.
+- **Polling**: every 4 s while the window is in front; about every 30 s while it is open behind other windows (kept
+  open for AI tools); never while minimised. Coming back to the window refreshes at once.
 - **Main**: topbar (view title + count, search with `/` hint, grid/list toggle, refresh), scrolling view.
 - **Inspector 380px**: appears when something is selected, slides in; overlays below 1250px.
 - **Projects screen**: a full-screen hub, shown on first run, from the sidebar's **Connect a project** button (under the

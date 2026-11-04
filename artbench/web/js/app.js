@@ -3,7 +3,7 @@ import { api } from './api.js';
 import { icon } from './icons.js';
 import { $, $$, hashOf, prefs, toast, emptyState } from './ui.js';
 import { t } from './i18n.js';
-import { S, actions, assetsRootOf, counts, filteredItems, findEntry, isProject, viewsFor } from './state.js';
+import { S, actions, assetsRootOf, counts, filteredItems, findEntry, homeView, isProject, viewsFor } from './state.js';
 import { viewCatalog, viewUnused, bindCatalog, filteredAssets, pcounts } from './catalog.js';
 import { clearThumbs, observeThumbs } from './thumbs.js';
 import { renderSidebar, renderStamps } from './sidebar.js';
@@ -17,6 +17,7 @@ import { openProjects, closeProjects, isProjectsOpen } from './projects.js';
 import { playLaunch } from './launch.js';
 
 const POLL_MS = 4000;
+const BACKGROUND_MS = 30000;
 const ALIVE_MS = 60000;      // the app window's server stops after a quiet spell; an open page keeps it alive
 
 async function loadProjects() {
@@ -50,7 +51,7 @@ async function refresh(force = false) {
     const changed = Object.keys(h).some(k => h[k] !== S.hashes[k]);
     if (h.data !== S.hashes.data) resetMeta();              // files changed: compare again when a card opens
     S.data = data; S.tasks = tasks; S.blenderNotes = blenderNotes; S.history = history; S.changes = changes; S.sinceSeen = sinceSeen; S.hashes = h;
-    if (!viewsFor().some(v => v[0] === S.view)) { S.view = viewsFor()[0][0]; render(); return; }
+    if (!viewsFor().some(v => v[0] === S.view)) { S.view = homeView(); render(); return; }
     if (S.view === 'scenes') loadScenes();
     if (S.selected && !findEntry(S.selected)) S.selected = null;
     if (changed && !document.activeElement?.closest('#view, #inspector')) render(); else renderStamps();
@@ -127,6 +128,15 @@ document.addEventListener('keydown', e => {
   api.get('/api/alive').then(a => { S.about = a; if (S.data) renderSidebar(); }, () => {});   // the version and the signature
   try { await loadProjects(); } catch (e) { toast(t('app.serverUnreachable', { msg: e.message })); }
   if (S.project) await refresh();
-  setInterval(() => { if (!document.hidden && !isProjectsOpen()) refresh(); }, POLL_MS);
+  // In front: every 4 s. Open behind other windows (kept open for AI tools): about every 30 s. Minimised: never.
+  // Coming back to the window refreshes at once.
+  let lastPoll = 0;
+  const poll = () => { lastPoll = Date.now(); refresh(); };
+  setInterval(() => {
+    if (document.hidden || isProjectsOpen()) return;
+    if (!document.hasFocus() && Date.now() - lastPoll < BACKGROUND_MS) return;
+    poll();
+  }, POLL_MS);
+  addEventListener('focus', () => { if (!document.hidden && !isProjectsOpen()) poll(); });
   setInterval(() => { api.get('/api/alive').catch(() => {}); }, ALIVE_MS);     // also while hidden or minimised
 })();

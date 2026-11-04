@@ -50,13 +50,18 @@ export function renderSidebar() {
     : { library: c.models, engine: c.engine, placeholders: c.placeholders, tasks: c.tasks, layout: S.data.layout?.enabled ? c.layout : null, graph: null, blends: c.blends, changes: c.changes, history: null, unsorted: c.unsorted };
   const warn = { layout: c.layout > 0, unsorted: c.unsorted > 0, changes: project && pc.changes > 0 };
   const projects = S.projects.map(p => `<option value="${esc(p.id)}" ${p.id === S.project ? 'selected' : ''} ${p.error ? 'disabled' : ''}>${esc(p.name || p.id)}${p.error ? t('side.error') : ''}</option>`).join('');
+  const navLink = ([k, label, ic]) => `<a class="${S.view === k ? 'on' : ''}" data-view="${k}">${icon(ic)}<span>${t(label)}</span>${navCount[k] != null ? `<span class="n ${warn[k] ? 'warn' : ''}">${navCount[k]}</span>` : ''}</a>`;
+  const views = viewsFor().filter(([k]) => k !== 'unsorted' || c.unsorted > 0), more = views.filter(v => v[3]);
+  const moreOpen = prefs.get('navMore', false) || more.some(v => v[0] === S.view);   // a view under More keeps it open
+  const moreWarn = !moreOpen && more.some(v => warn[v[0]]);
   $('#sidebar').innerHTML = `
     <div class="brand">${markSvg('mark')}<div><h1>Artbench</h1><small>${t('app.subtitle')}</small></div></div>
     <div class="projpill"><select id="projSel">${projects}<option value="__manage">${t('side.manage')}</option></select></div>
     <button class="btn sm side-connect" id="sideConnect">${icon('plus')} ${t('side.connect')}</button>
     ${githubLine()}
-    <nav class="nav">${viewsFor().filter(([k]) => k !== 'unsorted' || c.unsorted > 0).map(([k, label, ic]) =>
-      `<a class="${S.view === k ? 'on' : ''}" data-view="${k}">${icon(ic)}<span>${t(label)}</span>${navCount[k] != null ? `<span class="n ${warn[k] ? 'warn' : ''}">${navCount[k]}</span>` : ''}</a>`).join('')}</nav>
+    <nav class="nav">${views.filter(v => !v[3]).map(navLink).join('')}
+      ${more.length ? `<button class="nav-more ${moreOpen ? 'open' : ''}" id="navMore">${icon('chevron')}<span>${t('side.more')}</span>${moreWarn ? '<span class="n warn">•</span>' : ''}</button>
+      <div class="nav-more-list" ${moreOpen ? '' : 'hidden'}>${more.map(navLink).join('')}</div>` : ''}</nav>
     <div class="side-scroll">${S.view === 'library' && !project ? tree(c) : project && ['catalog', 'unused'].includes(S.view) ? kindNav() : ''}</div>
     <div class="side-foot"><button class="btn ghost sm" id="openProjects">${icon('settings')} ${t('side.projects')}</button><button class="btn ghost sm" id="langBtn" title="${t('ui.language')}">${lang() === 'en' ? 'TR' : 'EN'}</button><div class="stamps" id="stamps"></div></div>`;
   if (S.about) $('#sidebar .side-foot').insertAdjacentHTML('beforeend', `<button class="sign" title="${t('about.title')}">Artbench ${esc(S.about.version)} · ${esc(S.about.author)}</button>`);
@@ -68,6 +73,7 @@ export function renderSidebar() {
   $('#sideConnect').onclick = actions.openProjects;
   $('#langBtn').onclick = () => { setLang(lang() === 'en' ? 'tr' : 'en'); actions.render(); };
   $$('.nav a').forEach(a => a.onclick = () => actions.setView(a.dataset.view));
+  const navMore = $('#navMore'); if (navMore) navMore.onclick = () => { prefs.set('navMore', !navMore.classList.contains('open')); renderSidebar(); };
   if (project) bindKindNav($('#sidebar'));
   $$('.tree:not(.kindnav) .node').forEach(n => n.onclick = e => {
     const t = e.target.closest('[data-toggle]');

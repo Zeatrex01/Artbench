@@ -4,13 +4,17 @@ from .common import _cfg, _desktop_item
 
 
 def op_tasks(args):
+    """The board in board order; status "open" is to do and doing. Empty fields are left out of each row."""
     out = tasks.load(_cfg(args["project"]))
-    if args.get("status"):
-        out = [t for t in out if t["status"] == args["status"]]
+    status = args.get("status")
+    if status == "open":
+        out = [t for t in out if t["status"] != "done"]
+    elif status:
+        out = [t for t in out if t["status"] == status]
     if args.get("assets"):
         wanted = set(args["assets"])
         out = [t for t in out if t.get("asset") in wanted]
-    return out
+    return [{k: v for k, v in t.items() if v not in (None, "")} for t in out[:int(args.get("limit") or 50)]]
 
 
 def op_task_add(args):

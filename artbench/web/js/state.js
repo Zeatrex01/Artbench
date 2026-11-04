@@ -16,21 +16,24 @@ export const S = {
   sinceSeen: [], catFilters: { kind: null, usage: null, folder: null }, catGroup: prefs.get('catGroup', 'kind'), catSort: prefs.get('catSort', 'name'),   // project mode
 };
 
-/** [view key, i18n key of its label, icon]. */
+/** [view key, i18n key of its label, icon, more]: Tasks first (the view people keep open); views marked more wait under
+ * the sidebar's More. */
 export const VIEWS = [
-  ['library', 'nav.library', 'grid'], ['engine', 'nav.engine', 'inbox'], ['placeholders', 'nav.placeholders', 'cube'],
-  ['tasks', 'nav.tasks', 'checksq'], ['layout', 'nav.layout', 'map'], ['graph', 'nav.graph', 'share'], ['scenes', 'nav.scenes', 'clapper'],
-  ['blends', 'nav.blends', 'blender'], ['changes', 'nav.changes', 'diff'], ['history', 'nav.history', 'clock'],
-  ['unsorted', 'nav.unsorted', 'question'],
+  ['tasks', 'nav.tasks', 'checksq'], ['library', 'nav.library', 'grid'], ['engine', 'nav.engine', 'inbox'],
+  ['changes', 'nav.changes', 'diff'], ['scenes', 'nav.scenes', 'clapper'],
+  ['placeholders', 'nav.placeholders', 'cube', true], ['layout', 'nav.layout', 'map', true], ['graph', 'nav.graph', 'share', true],
+  ['blends', 'nav.blends', 'blender', true], ['history', 'nav.history', 'clock', true], ['unsorted', 'nav.unsorted', 'question', true],
 ];
 /** Views of a project-mode project (the game project on its own, no art folder). */
 export const VIEWS_PROJECT = [
-  ['catalog', 'nav.catalog', 'grid'], ['tasks', 'nav.tasks', 'checksq'], ['unused', 'nav.unused', 'inbox'],
-  ['placeholders', 'nav.placeholders', 'cube'], ['scenes', 'nav.scenes', 'clapper'], ['changes', 'nav.changes', 'diff'],
-  ['layout', 'nav.layout', 'map'],
+  ['tasks', 'nav.tasks', 'checksq'], ['catalog', 'nav.catalog', 'grid'], ['unused', 'nav.unused', 'inbox'],
+  ['changes', 'nav.changes', 'diff'], ['scenes', 'nav.scenes', 'clapper'],
+  ['placeholders', 'nav.placeholders', 'cube', true], ['layout', 'nav.layout', 'map', true],
 ];
 export const isProject = () => S.data?.mode === 'project';
 export const viewsFor = () => (isProject() ? VIEWS_PROJECT : VIEWS);
+/** Where a project opens when the remembered view is not one of its own: its assets (a new project's board is empty). */
+export const homeView = () => (isProject() ? 'catalog' : 'library');
 const kind = (icon, color, key) => ({ icon, color, get label() { return t(key); } });
 export const KIND = {
   model: kind('box', '#6f7dff', 'kind.model'), mesh: kind('cube', '#b48cff', 'kind.mesh'),

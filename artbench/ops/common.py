@@ -25,13 +25,13 @@ LIST_CAP = 50                         # rows of used_by / uses an asset answer c
 GRAPH_CAP = 200                       # edges a graph_neighbors answer carries; edges_total says how many exist
 
 
-_PAGE = {"offset": {"type": "integer", "default": 0}, "limit": {"type": "integer", "default": 100}}
+_PAGE = {"offset": {"type": "integer", "default": 0}, "limit": {"type": "integer", "default": 25}}   # small pages: an AI pays per row
 
 
 def _page(rows, args):
     """(rows[offset:offset+limit], total) with limit capped like the catalog's."""
     offset = max(0, int(args.get("offset") or 0))
-    limit = max(1, min(int(args.get("limit") or 100), catalog.MAX_PAGE))
+    limit = max(1, min(int(args.get("limit") or 25), catalog.MAX_PAGE))
     return rows[offset:offset + limit], len(rows)
 
 
@@ -54,7 +54,7 @@ def _schema(props, required=()):
     return {"type": "object", "properties": props, "required": list(required)}
 
 
-_P = {"project": {"type": "string", "description": "Project id from artbench_projects"}}
+_P = {"project": {"type": "string"}}            # the id from artbench_projects (said once there)
 
 
 def _cfg(project):

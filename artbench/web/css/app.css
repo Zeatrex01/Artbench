@@ -92,6 +92,12 @@ kbd { font: 11px var(--mono); background: var(--s3); border: 1px solid var(--lin
 .nav a .n { margin-left: auto; font: 11px var(--mono); color: var(--dim); }
 .nav a.on .n { color: var(--muted); }
 .nav a .n.warn { color: var(--warn); }
+.nav-more { display: flex; align-items: center; gap: 10px; width: 100%; margin-top: 4px; padding: 7px 10px; border: 0; background: none;
+  border-radius: var(--r1); color: var(--dim); font: 500 12px var(--font); cursor: pointer; }
+.nav-more:hover { color: var(--text); background: var(--s2); }
+.nav-more svg { width: 14px; height: 14px; transform: rotate(-90deg); transition: transform var(--fast); }
+.nav-more.open svg { transform: none; }
+.nav-more .n { margin-left: auto; }
 .side-scroll { flex: 1; overflow: auto; min-height: 0; padding: 4px 8px 8px; }
 .side-section { padding: 10px 8px 4px; }
 .tree .node { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: var(--r1); cursor: pointer; color: var(--muted); user-select: none; }
