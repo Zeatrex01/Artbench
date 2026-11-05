@@ -19,19 +19,19 @@ export function markBadges(id) {
 }
 
 /** The pick box on a row or tile. */
-export const pickBox = id => `<button class="pick ${S.picked.has(id) ? 'on' : ''}" data-pick="${esc(id)}" title="${t('pick.title')}">${icon('check')}</button>`;
+export const pickBox = id => `<button class="pickbox ${S.picked.has(id) ? 'on' : ''}" data-pickbox="${esc(id)}" title="${t('pick.title')}">${icon('check')}</button>`;
 
 let lastPick = null;
 export function bindPicks(el) {
-  $$('[data-pick]', el).forEach(b => b.onclick = ev => {
+  $$('[data-pickbox]', el).forEach(b => b.onclick = ev => {
     ev.stopPropagation();
-    const all = $$('[data-pick]', el).map(x => x.dataset.pick), id = b.dataset.pick, on = !S.picked.has(id);
+    const all = $$('[data-pickbox]', el).map(x => x.dataset.pickbox), id = b.dataset.pickbox, on = !S.picked.has(id);
     if (ev.shiftKey && lastPick && all.includes(lastPick)) {                 // Shift: everything between, like a file list
       const [a, z] = [all.indexOf(lastPick), all.indexOf(id)].sort((x, y) => x - y);
       all.slice(a, z + 1).forEach(x => (on ? S.picked.add(x) : S.picked.delete(x)));
     } else on ? S.picked.add(id) : S.picked.delete(id);
     lastPick = id;
-    $$('[data-pick]', el).forEach(x => x.classList.toggle('on', S.picked.has(x.dataset.pick)));
+    $$('[data-pickbox]', el).forEach(x => x.classList.toggle('on', S.picked.has(x.dataset.pickbox)));
     renderPickBar();
   });
 }
