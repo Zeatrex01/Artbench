@@ -2,6 +2,7 @@
 .meta sidecar holding its guid and import settings, and the dump is read from the text-serialized files
 (unity_dump.py) without Unity running."""
 import os
+import re
 import time
 
 from .. import store, unity_dump
@@ -62,6 +63,30 @@ class UnityAdapter(EngineAdapter):
 
     def sidecars(self, path):
         return [path + ".meta"]
+
+    def import_settings(self, path):
+        """The texture or model importer's settings in the asset's .meta (the default platform's: the first value of
+        each key). Read only; a missing or unreadable .meta gives {}."""
+        try:
+            with open(path + ".meta", encoding="utf-8", errors="replace") as f:
+                text = f.read(1 << 16)
+        except OSError:
+            return {}
+        def first(key):
+            m = re.search(r"^\s*" + key + r":\s*(-?\d+)", text, re.M)
+            return int(m.group(1)) if m else None
+        if "TextureImporter:" in text:
+            out = {"importer": "texture", "max_size": first("maxTextureSize"), "readable": first("isReadable")}
+            comp, mips = first("textureCompression"), first("enableMipMap")
+            out["compressed"] = None if comp is None else comp != 0
+            out["mipmaps"] = None if mips is None else mips != 0
+        elif "ModelImporter:" in text:
+            out = {"importer": "model", "readable": first("isReadable")}
+        else:
+            return {}
+        if out["readable"] is not None:
+            out["readable"] = out["readable"] != 0
+        return out
 
     def build_dump(self, cfg, force=False, progress=None):
         """The asset dump, rebuilt when missing, older than DUMP_MAX_AGE, forced, or older than the last bridge report

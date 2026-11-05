@@ -46,8 +46,8 @@ function githubLine() {
 export function renderSidebar() {
   const c = counts(), project = isProject(), pc = project ? pcounts() : null;
   const navCount = project
-    ? { marked: Object.keys(S.data.marks || {}).length || null, catalog: pc.total, tasks: pc.tasks, unused: pc.unreferenced + pc.byName, placeholders: pc.placeholders, layout: S.data.layout?.enabled ? c.layout : null, changes: pc.changes || null }
-    : { marked: Object.keys(S.data.marks || {}).length || null, library: c.models, engine: c.engine, placeholders: c.placeholders, tasks: c.tasks, layout: S.data.layout?.enabled ? c.layout : null, graph: null, blends: c.blends, changes: c.changes, history: null, unsorted: c.unsorted };
+    ? { marked: Object.keys(S.data.marks || {}).length || null, checks: S.checks?.std?.total || null, catalog: pc.total, tasks: pc.tasks, unused: pc.unreferenced + pc.byName, placeholders: pc.placeholders, layout: S.data.layout?.enabled ? c.layout : null, changes: pc.changes || null }
+    : { marked: Object.keys(S.data.marks || {}).length || null, checks: S.checks?.std?.total || null, library: c.models, engine: c.engine, placeholders: c.placeholders, tasks: c.tasks, layout: S.data.layout?.enabled ? c.layout : null, graph: null, blends: c.blends, changes: c.changes, history: null, unsorted: c.unsorted };
   const warn = { layout: c.layout > 0, unsorted: c.unsorted > 0, changes: project && pc.changes > 0 };
   const projects = S.projects.map(p => `<option value="${esc(p.id)}" ${p.id === S.project ? 'selected' : ''} ${p.error ? 'disabled' : ''}>${esc(p.name || p.id)}${p.error ? t('side.error') : ''}</option>`).join('');
   const navLink = ([k, label, ic]) => `<a class="${S.view === k ? 'on' : ''}" data-view="${k}">${icon(ic)}<span>${t(label)}</span>${navCount[k] != null ? `<span class="n ${warn[k] ? 'warn' : ''}">${navCount[k]}</span>` : ''}</a>`;

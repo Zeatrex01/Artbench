@@ -13,7 +13,7 @@ export const S = {
   selected: null, graphFocus: null,
   closedGroups: prefs.get('closedGroups', {}), closedCats: prefs.get('closedCats', {}),
   hashes: {}, busy: false, assetsRoot: null, scenes: null, engineStatus: null,
-  sinceSeen: [], picked: new Set(), markFilter: 'all', catFilters: { kind: null, usage: null, folder: null, mark: null }, catGroup: prefs.get('catGroup', 'kind'), catSort: prefs.get('catSort', 'name'),   // project mode
+  sinceSeen: [], picked: new Set(), markFilter: 'all', checks: null, checkTab: 'standards', checkRule: null, checkRulesOpen: false, catFilters: { kind: null, usage: null, folder: null, mark: null }, catGroup: prefs.get('catGroup', 'kind'), catSort: prefs.get('catSort', 'name'),   // project mode
 };
 
 /** [view key, i18n key of its label, icon, more]: Tasks first (the view people keep open); views marked more wait under
@@ -21,13 +21,13 @@ export const S = {
 export const VIEWS = [
   ['tasks', 'nav.tasks', 'checksq'], ['marked', 'nav.marked', 'star'], ['library', 'nav.library', 'grid'], ['engine', 'nav.engine', 'inbox'],
   ['changes', 'nav.changes', 'diff'], ['scenes', 'nav.scenes', 'clapper'],
-  ['placeholders', 'nav.placeholders', 'cube', true], ['layout', 'nav.layout', 'map', true], ['graph', 'nav.graph', 'share', true],
+  ['placeholders', 'nav.placeholders', 'cube', true], ['checks', 'nav.checks', 'alert', true], ['layout', 'nav.layout', 'map', true], ['graph', 'nav.graph', 'share', true],
   ['blends', 'nav.blends', 'blender', true], ['history', 'nav.history', 'clock', true], ['unsorted', 'nav.unsorted', 'question', true],
 ];
 /** Views of a project-mode project (the game project on its own, no art folder). */
 export const VIEWS_PROJECT = [
   ['tasks', 'nav.tasks', 'checksq'], ['marked', 'nav.marked', 'star'], ['catalog', 'nav.catalog', 'grid'], ['unused', 'nav.unused', 'inbox'],
-  ['changes', 'nav.changes', 'diff'], ['scenes', 'nav.scenes', 'clapper'],
+  ['checks', 'nav.checks', 'alert'], ['changes', 'nav.changes', 'diff'], ['scenes', 'nav.scenes', 'clapper'],
   ['placeholders', 'nav.placeholders', 'cube', true], ['layout', 'nav.layout', 'map', true],
 ];
 export const isProject = () => S.data?.mode === 'project';

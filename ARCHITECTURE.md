@@ -42,6 +42,9 @@ tasks.py            task list CRUD                                              
 marks.py            favourite stars and "revision coming" flags with a note, per asset id (marks.json)   writes history
 export.py           game-project models with their textures into a folder of one's own, one folder per model,
                     plan then copy, nothing overwritten                                                writes history
+checks.py           advisory checks over the catalog: duplicates (same content in several places, by size then hash)
+                    and the project's standards (texture size, power of two, Read/Write, compression, naming,
+                    triangle budget); the rules live in the project config's `standards`              writes history
 asset_meta.py       metadata snapshots (via blender_jobs) and the structural diff, summary lines, Unity warnings, card payload
 thumbs.py           preview renders (via blender_jobs)
 graph.py            analysis: reference graph over the engine dump
@@ -177,6 +180,7 @@ uses, shaped so Godot fits without breaking it:
 | `is_engine_path(value)` | starts with the prefix | |
 | `to_engine_path(cfg, abs)` / `from_engine_path(cfg, value)` | absolute path <-> `Assets/...`; `from` resolves what a caller joined (`//`, `.`, `..`) and refuses a path leaving `Assets/` | absolute path <-> `res://...` |
 | `sidecars(path)` | `[path + ".meta"]` (kept on send) | `[path + ".import"]` |
+| `import_settings(path)` | read only, from the asset's `.meta` (first value of each key, the default platform): texture `{importer, max_size, compressed, mipmaps, readable}`, model `{importer, readable}`; `{}` when unknown | the `.import` file |
 | `build_dump(cfg, force)` | `unity_dump` + the dump cache, rebuilt when older than `engines.base.DUMP_MAX_AGE` (60 s), forced, or older than the stale stamp (`dump_stale_since`) | planned |
 | `lookup(dump)` | helpers: path -> guid, path -> referrers | planned |
 | `layout_defaults` | Unity's folder rules (`engines/unity.py`), used when a project has no `layout_rules` | planned |
@@ -221,7 +225,7 @@ A model's own textures sit beside it and travel with it when it is the last mode
 naming the supported ones), `engine_root`,
 `art_root`, `states`, `blend_root`, `textures_root`, `categories`, `model_extensions`, `texture_extensions`,
 `blend_extensions`, `ignore`, `engine_ignore`, optional `engine_assets_root`, `engine_ignore_dump`,
-`layout_rules`, `layout_enabled`, `layout_ignore`, `blender`, `github_account` (optional: the GitHub account this project pushes as; set from the Projects screen or `setup --github`, each change a `GITHUB` history line), `engine_targets` (category -> engine folder for first sends), `export_presets`, `character`,
+`layout_rules`, `layout_enabled`, `layout_ignore`, `blender`, `github_account` (optional: the GitHub account this project pushes as; set from the Projects screen or `setup --github`, each change a `GITHUB` history line), `engine_targets` (category -> engine folder for first sends), `standards` (the checks' rules over `checks.DEFAULTS`; each change a `STANDARDS` history line), `export_presets`, `character`,
 `bridge_fresh_seconds` (how long a live scene report counts, default 600), `report_limits` (over
 `live.DEFAULT_LIMITS` {`scenes`: 200, `nodes`: 200000, `uses`: 1000000} per engine report; any other key or a
 value that is not a whole number of 0 or more is a config error, `unavailable`),
@@ -467,7 +471,7 @@ blend; an engine_path must be an existing file inside the engine root with the i
 as same-name copies are found), given as an
 absolute path or under `Assets/`; the scan honours a note only when it passes the same rule (a hand-edited one
 included), so an item can never be pointed at another file that a send would then overwrite), move, history, changes, refresh, send_plan, send, pull_plan, pull, metadata_snapshot, metadata_diff, preview,
-scene_inventory, engine_status, engine_report, doctor, catalog (kind, usage, folder, search, detail, offset, limit 25 ≤
+scene_inventory, engine_status, engine_report, doctor, checks (what standards | duplicates, rule?, offset, limit), checks_settings (set?), catalog (kind, usage, folder, search, detail, offset, limit 25 ≤
 500 → `{total, offset, assets}`: brief rows, `detail: "full"` for the whole entries), tasks (status: todo, doing, done or
 open; assets; limit 50 → rows without their empty fields), blender_status (no project: `{open, file, blender, pid, seconds_since_report, project, asset, models}`, project = the registered project whose art folder or engine folder holds the file, asset = the file's id there (its path under the art folder, or `engine:<path>` inside the game project), models = the desktop models made from it (bound to this .blend by name or by binding); `blender_link.file_info`, reused for 20 s), blender_report (the add-on's door, HTTP only like engine_report: {file, blender, pid, closing?}), blender_notes_send (the add-on's door too: {file, notes}; a file in no registered project is `bad_request` "this file is in no Artbench project"; → `{project, asset, count}`), blender_notes (project → the entries above, newest send first; read only, shown in the Tasks view's From Blender section), open_in_blender (project, id: a model opens in Blender's window, detached; a .blend as it is, FBX/OBJ/glTF imported into an empty scene by `blender_link.IMPORT_EXPR`; an art-folder model with a .blend source opens that .blend; `unavailable` without Blender, `bad_request` for a kind that is not a model).
 
@@ -663,6 +667,16 @@ brief rows carry `fav` / `revision` only when set; the page state carries the ma
 (ids `engine:...`, dest) are the page's and the command line's (`PAGE_ONLY`: no MCP tool, an AI has no folder of
 the person's to fill): one folder per model (Crate, Crate_2), its textures from `catalog.textures_of`, .meta left
 behind, a file already there kept, a folder inside the game project or the art folder refused, one EXPORT line.
+
+**Checks** (advisory, nothing is changed). `checks` (what=standards, the default) answers `{total, counts per rule,
+issues: [{id, rule, detail, level}]}`, paged, `rule` narrowing; what=duplicates answers `{total, wasted, groups:
+[{sha, size, wasted, assets: [{id, path, kind, usage, used_by_count}]}]}`, the most wasted bytes first. Duplicates
+take models, textures, audio and materials, grouped by size first so only likely copies are hashed (the tool's hash
+cache). Standards: a texture whose imported size (the smaller of its side and the importer's max size) is over
+`texture_max` (4096), a side that is not a power of two, Read/Write on, compression off, a name without its kind's
+prefix (`naming`, off; T_, M_, PF_, SM_), a model over `tris_max` (off; Blender's count, so project mode only).
+`checks_settings` (set: any of the rules; 0 turns a limit off) reads or writes them. The page's Checks view shows
+both with a rules card; the page clears what it loaded when the files change.
 
 Next on the bridge: pick models and pull them into one .blend, with or without textures, through
 the Blender add-on, the place and file to save chosen by the person; exports from that .blend back the same way.

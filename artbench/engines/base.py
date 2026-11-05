@@ -62,6 +62,11 @@ class EngineAdapter:
         """Files the engine keeps beside an asset (kept untouched when Artbench overwrites the asset)."""
         return []
 
+    def import_settings(self, path):
+        """How the engine imports the asset at `path`, read only: {importer: texture | model, max_size, compressed,
+        mipmaps, readable}, the keys it knows; {} when it cannot tell."""
+        return {}
+
     def build_dump(self, cfg, force=False, progress=None):
         """The engine's asset dump; `progress(stage, done, total, current)` hears how far a rebuild is."""
         raise NotImplementedError

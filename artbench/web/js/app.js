@@ -13,6 +13,7 @@ import { viewTasks, bindTasks } from './tasks.js';
 import { viewEngine, viewPlaceholders, viewLayout, viewBlends, viewChanges, viewHistory, viewUnsorted, bindViews } from './views.js';
 import { viewGraph, initGraph } from './graph.js';
 import { viewScenes, loadScenes, bindScenes } from './scenes.js';
+import { viewChecks, bindChecks } from './checks.js';
 import { viewMarked, bindMarked, bindPicks, renderPickBar } from './marks.js';
 import { openProjects, closeProjects, isProjectsOpen } from './projects.js';
 import { playLaunch } from './launch.js';
@@ -50,7 +51,7 @@ async function refresh(force = false) {
     S.assetsRoot = assetsRootOf(data.engine_root);
     const h = { github: hashOf(github), data: hashOf([data.items, data.engine_only, data.placeholders, data.blends, data.unsorted, data.layout_issues, data.states, data.catalog]), tasks: hashOf(tasks), notes: hashOf(blenderNotes), history: hashOf(history), changes: hashOf(changes), seen: hashOf(sinceSeen) };
     const changed = Object.keys(h).some(k => h[k] !== S.hashes[k]);
-    if (h.data !== S.hashes.data) resetMeta();              // files changed: compare again when a card opens
+    if (h.data !== S.hashes.data) { resetMeta(); S.checks = null; }   // files changed: compare again, check again
     S.data = data; S.tasks = tasks; S.blenderNotes = blenderNotes; S.history = history; S.changes = changes; S.sinceSeen = sinceSeen; S.hashes = h;
     if (!viewsFor().some(v => v[0] === S.view)) { S.view = homeView(); render(); return; }
     if (S.view === 'scenes') loadScenes();
@@ -69,8 +70,8 @@ function renderTopbar() {
   const v = viewsFor().find(x => x[0] === S.view) || viewsFor()[0];
   const c = counts(), pc = isProject() ? pcounts() : null;
   const cnt = isProject()
-    ? { marked: Object.keys(S.data.marks || {}).length, catalog: `${filteredAssets().length} / ${pc.total}`, unused: pc.unreferenced + pc.byName, placeholders: pc.placeholders, tasks: S.tasks.length, layout: S.data.layout?.enabled ? c.layout : null, changes: pc.changes, scenes: S.scenes?.length }[S.view]
-    : { marked: Object.keys(S.data.marks || {}).length, library: `${filteredItems().length} / ${c.models}`, engine: c.engine, placeholders: c.placeholders, tasks: S.tasks.length, layout: S.data.layout?.enabled ? c.layout : null, blends: c.blends, changes: c.changes, history: S.history.length, unsorted: c.unsorted, scenes: S.scenes?.length }[S.view];
+    ? { marked: Object.keys(S.data.marks || {}).length, catalog: `${filteredAssets().length} / ${pc.total}`, unused: pc.unreferenced + pc.byName, placeholders: pc.placeholders, tasks: S.tasks.length, layout: S.data.layout?.enabled ? c.layout : null, changes: pc.changes, scenes: S.scenes?.length, checks: S.checks?.std?.total }[S.view]
+    : { marked: Object.keys(S.data.marks || {}).length, library: `${filteredItems().length} / ${c.models}`, engine: c.engine, placeholders: c.placeholders, tasks: S.tasks.length, layout: S.data.layout?.enabled ? c.layout : null, blends: c.blends, changes: c.changes, history: S.history.length, unsorted: c.unsorted, scenes: S.scenes?.length, checks: S.checks?.std?.total }[S.view];
   const searchable = ['library', 'engine', 'placeholders', 'blends', 'catalog', 'unused'].includes(S.view);
   $('#topbar').innerHTML = `<h2>${icon(v[2])} ${t(v[1])} ${cnt != null ? `<span class="cnt">${cnt}</span>` : ''}</h2><div class="grow"></div>
     ${searchable ? `<div class="search">${icon('search')}<input type="text" id="search" placeholder="${t(isProject() ? 'app.searchPlaceholderProject' : 'app.searchPlaceholder')}" value="${S.search.replace(/"/g, '&quot;')}"><kbd>/</kbd></div>` : ''}
@@ -87,7 +88,7 @@ function renderTopbar() {
 
 function renderView() {
   const el = $('#view');
-  const views = { marked: viewMarked, library: viewLibrary, engine: viewEngine, placeholders: viewPlaceholders, tasks: viewTasks, layout: viewLayout, graph: viewGraph, scenes: viewScenes, blends: viewBlends, changes: viewChanges, history: viewHistory, unsorted: viewUnsorted, catalog: viewCatalog, unused: viewUnused };
+  const views = { marked: viewMarked, library: viewLibrary, engine: viewEngine, placeholders: viewPlaceholders, tasks: viewTasks, layout: viewLayout, graph: viewGraph, scenes: viewScenes, blends: viewBlends, changes: viewChanges, history: viewHistory, unsorted: viewUnsorted, catalog: viewCatalog, unused: viewUnused, checks: viewChecks };
   const keepScroll = el.dataset.view === S.view ? el.scrollTop : 0;
   el.dataset.view = S.view;
   el.classList.toggle('tight', S.view === 'graph');
@@ -96,13 +97,14 @@ function renderView() {
   bindCommon(el); bindViews(el); bindTasks(el); if (isProject()) bindCatalog(el);
   if (S.view === 'scenes') bindScenes(el);
   if (S.view === 'marked') bindMarked(el);
+  if (S.view === 'checks') bindChecks(el);
   bindPicks(el); renderPickBar();
   if (S.view === 'graph') initGraph();
   el.scrollTop = keepScroll;
 }
 
 function setView(view) { S.view = view; prefs.set('view', view); S.search = ''; render(); }
-function switchProject(id) { S.picked.clear(); S.project = id; prefs.set('project', id); S.data = null; S.catFilters = { kind: null, usage: null, folder: null }; S.graph = null; S.scenes = null; S.scenesError = null; S.engineStatus = null; S.selected = null; S.hashes = {}; clearThumbs(); render(); refresh(); }
+function switchProject(id) { S.picked.clear(); S.project = id; prefs.set('project', id); S.data = null; S.catFilters = { kind: null, usage: null, folder: null }; S.graph = null; S.scenes = null; S.scenesError = null; S.checks = null; S.checkRule = null; S.engineStatus = null; S.selected = null; S.hashes = {}; clearThumbs(); render(); refresh(); }
 function select(id, jump = false) {
   S.selected = (S.selected === id && !jump) ? null : id;
   if (jump && S.selected && isProject()) {

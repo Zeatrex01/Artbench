@@ -2,7 +2,7 @@
 layout, the reference graph, scene contents."""
 import os
 
-from .. import catalog, changes, config, engines, github_link, graph, layout, marks, scan, scenes, tasks
+from .. import catalog, changes, checks, config, engines, github_link, graph, layout, marks, scan, scenes, tasks
 from ..errors import NotFound
 from .common import GRAPH_CAP, LIST_CAP, _cfg, _item_summary, _page
 
@@ -262,3 +262,25 @@ def _asset_id(cfg, args, state):
 def catalog_counts(cfg):
     """The catalog's counts for a freshly connected project (what setup prints): {"kinds", "usage", "hidden"}."""
     return catalog.build(cfg, engines.dump(cfg))["counts"]
+
+
+def op_checks(args):
+    """what=standards (default): the issues, brief, paged, with counts per rule; what=duplicates: the copy groups."""
+    cfg = _cfg(args["project"])
+    assets = scan.scan(cfg)["catalog"]["assets"] if config.is_project_mode(cfg) else catalog.build(cfg, engines.dump(cfg))["assets"]
+    if args.get("what") == "duplicates":
+        groups = checks.duplicates(cfg, assets)
+        page, total = _page(groups, args)
+        return {"total": total, "wasted": sum(g["wasted"] for g in groups), "groups": page}
+    issues = checks.standards(cfg, assets)
+    if args.get("rule"):
+        issues = [i for i in issues if i["rule"] == args["rule"]]
+    page, total = _page(issues, args)
+    return {"total": total, "counts": checks.counts(checks.standards(cfg, assets)) if args.get("rule") else checks.counts(issues),
+            "issues": [{k: i[k] for k in ("id", "rule", "detail", "level")} for i in page]}
+
+
+def op_checks_settings(args):
+    cfg = _cfg(args["project"])
+    changes = dict(args.get("set") or {}) or {k: args[k] for k in checks.DEFAULTS if k in args}
+    return checks.set_rules(cfg, **changes) if changes else checks.rules(cfg)

@@ -35,6 +35,7 @@ js/catalog.js       project mode: art catalog by kind, unused view, asset card, 
                     model statistics in rows and cards, sort, hidden folders, Open in Blender
 js/scenes.js        scenes and what each one uses: the list (filterable) beside one scene's assets by kind
 js/marks.js         stars and revision flags, picking several assets, the pick bar, the Marked view, export to a folder
+js/checks.js        the Checks view: standards by rule, duplicates with what uses each copy, the rules card
 js/i18n.js          every user-visible string, English and Turkish; t(key, vars)
 ```
 The server serves these as static files; `index.html` loads `js/app.js` as an ES module.
@@ -81,6 +82,12 @@ animator bad, data muted.
   (second in the menu) lists what waits for a revision with its note first, then the favourites, with All /
   Waiting for a revision / Favorites; the catalog's filters gain Favorites and Waiting for a revision. Bringing a
   Unity model into the art folder asks for the category and offers its textures, ticked.
+- **Checks**: Standards / Duplicates as a segmented switch with counts, Rules beside it. Standards: one figure per
+  rule (its count, a status dot for the rules that have issues, quiet at zero; a click narrows to that rule), then
+  the issues grouped by rule, each row with the detail and a Worth fixing (warn) or Note (info) chip. Duplicates: two
+  figures (files with copies, the space the copies take), then one group per file with each copy, its usage and
+  what uses it. The rules card: largest texture (a select), triangle budget, four checkboxes, name prefixes while
+  naming is on, Save rules. Nothing on the page changes a file of the game project.
 - **Polling**: every 4 s while the window is in front; about every 30 s while it is open behind other windows (kept
   open for AI tools); never while minimised. Coming back to the window refreshes at once.
 - **Main**: topbar (view title + count, search with `/` hint, grid/list toggle, refresh), scrolling view.

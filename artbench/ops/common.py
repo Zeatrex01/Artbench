@@ -3,7 +3,7 @@ from .. import catalog, config, scan
 from ..errors import NotFound
 
 
-WRITE_OPS = {"task_add", "task_update", "mark", "export", "note", "meta", "move", "send", "pull", "bring_in", "engine_report", "doctor", "blender_report", "blender_notes_send",
+WRITE_OPS = {"task_add", "task_update", "mark", "export", "checks_settings", "note", "meta", "move", "send", "pull", "bring_in", "engine_report", "doctor", "blender_report", "blender_notes_send",
              "open_in_blender", "layout_settings"}
 
 

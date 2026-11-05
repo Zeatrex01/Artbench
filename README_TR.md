@@ -39,6 +39,14 @@ solundaki kutuyla birkaç varlığı seç (Shift: aralık); alttaki çubuktan he
 önce plan gösterilir, orada olan dosyanın üstüne yazılmaz. Unity'deki bir modeli art klasörüne alırken de dokularını
 getirmek için kutu işaretli gelir.
 
+## Denetim: kopyalar ve standartlar
+Sol menüdeki **Denetim** yalnızca öneri verir, hiçbir şeyi değiştirmez. **Standartlar**: çok büyük içe aktarılan
+dokular (varsayılan sınır 4096), kenarı ikinin kuvveti olmayanlar, Read/Write'ı açık olanlar, sıkıştırılmamışlar; isteğe
+bağlı olarak ad önekleri (T_, M_, PF_, SM_) ve model başına üçgen bütçesi (Blender'ın sayımıyla). Her kuralın sayısına
+tıklayınca liste o kurala daralır; **Kurallar** düğmesinden sınırları ve önekleri ayarla. Unity ayarları `.meta`
+dosyalarından yalnızca okunur. **Kopyalar**: aynı içerikli dosyalar ve her kopyayı neyin kullandığı, kopyaların kapladığı
+yerle birlikte. AI aynı bilgiyi `checks` ve `checks_settings` araçlarıyla alır.
+
 ## Makine kontrolü
 Sol alttaki **Projeler** → **Bu makineyi kontrol et**: açık proje için motor klasörünü, motor dökümünü, art
 klasörüne yazmayı, süreçler arası proje kilidini, dosya özetini, uzun yolları (Windows), OneDrive'ı, Blender'ı ve sayfa
