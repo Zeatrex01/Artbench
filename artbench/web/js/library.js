@@ -3,20 +3,21 @@ import { ICONS, icon } from './icons.js';
 import { t } from './i18n.js';
 import { $$, esc, prefs, emptyState, callout } from './ui.js';
 import { thumbHTML } from './thumbs.js';
+import { markBadges, pickBox } from './marks.js';
 import { S, STATE_LABEL, STATE_CLS, STATE_ORDER, SYNC, USAGE, actions, counts, filteredItems, setOf, setLabel, bySet, chipsFor, engineUnreachable, syncOf } from './state.js';
 
 /** Card for a desktop or engine-only entry; `path` is the file the thumbnail is rendered from. */
 export function tile(i, path) {
   const open = S.tasks.filter(t => t.asset === i.id && t.status !== 'done').length;
-  return `<div class="tile ${S.selected === i.id ? 'on' : ''}" data-id="${esc(i.id)}">${thumbHTML(path)}
+  return `<div class="tile ${S.selected === i.id ? 'on' : ''}" data-id="${esc(i.id)}">${pickBox(i.id)}${thumbHTML(path)}
     <div class="meta"><div class="name ellip" title="${esc(i.name)}">${esc(i.name)}</div>
-      <div class="chips">${chipsFor(i)}${open ? `<span class="chip accent nodot">${t('lib.openTasks', { n: open })}</span>` : ''}${i.textures?.length ? `<span class="tex">${icon('image')}${i.textures.length}</span>` : ''}</div>
+      <div class="chips">${markBadges(i.id)}${chipsFor(i)}${open ? `<span class="chip accent nodot">${t('lib.openTasks', { n: open })}</span>` : ''}${i.textures?.length ? `<span class="tex">${icon('image')}${i.textures.length}</span>` : ''}</div>
       ${i.note ? `<div class="cap ellip">${esc(i.note)}</div>` : ''}</div></div>`;
 }
 export function lrow(i, path, sub = '') {
-  return `<div class="lrow ${S.selected === i.id ? 'on' : ''}" data-id="${esc(i.id)}">${thumbHTML(path, 'sq')}
+  return `<div class="lrow ${S.selected === i.id ? 'on' : ''}" data-id="${esc(i.id)}">${pickBox(i.id)}${thumbHTML(path, 'sq')}
     <div class="ellip"><span class="name">${esc(i.name)}</span> <span class="sub">${esc(sub || i.id)}</span>${i.note ? `<div class="sub ellip">${esc(i.note)}</div>` : ''}</div>
-    <div class="meta">${chipsFor(i)}</div><div class="r">${syncOf(i) === 'conflict' ? '' : syncOf(i) ? `<span class="synclabel ${SYNC[syncOf(i)][0]} ${i.basis === 'mtime' ? 'provisional' : ''}" title="${i.basis === 'mtime' ? t('lib.provisionalTitle') : ''}">${SYNC[syncOf(i)][1]}</span>` : (i.usage ? USAGE[i.usage][1] : '')}</div><div class="r">${i.textures?.length ? t('lib.textures', { n: i.textures.length }) : ''}</div></div>`;
+    <div class="meta">${markBadges(i.id)}${chipsFor(i)}</div><div class="r">${syncOf(i) === 'conflict' ? '' : syncOf(i) ? `<span class="synclabel ${SYNC[syncOf(i)][0]} ${i.basis === 'mtime' ? 'provisional' : ''}" title="${i.basis === 'mtime' ? t('lib.provisionalTitle') : ''}">${SYNC[syncOf(i)][1]}</span>` : (i.usage ? USAGE[i.usage][1] : '')}</div><div class="r">${i.textures?.length ? t('lib.textures', { n: i.textures.length }) : ''}</div></div>`;
 }
 export function groupHead(title, cat, n, extra = '', collapsible = true) {
   return `<div class="ghead">${collapsible ? `<svg class="i chev" viewBox="0 0 24 24">${ICONS.chevron}</svg>` : ''}<h3>${esc(title)}${cat ? ` <span class="cat">· ${esc(cat)}</span>` : ''}</h3><span class="cnt">${n}</span>${extra}<div class="line"></div></div>`;

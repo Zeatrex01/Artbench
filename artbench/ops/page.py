@@ -1,7 +1,7 @@
 """What the page's own routes (/api/*) need, in the shapes the page reads. These are not operations: no MCP tool and
 no command line reach them (programs use /api/v1). The server only carries requests here; it holds the project lock
 around the calls that scan or write, as before."""
-from .. import actions, asset_meta, catalog, changes, config, deploy, engines, graph, live, package, scan, store, tasks, thumbs
+from .. import actions, asset_meta, catalog, changes, config, deploy, engines, graph, live, marks, package, scan, store, tasks, thumbs
 from ..errors import NotFound
 
 ENGINE_REPORT_SCHEMA = live.SCHEMA
@@ -34,6 +34,7 @@ def state(cfg):
     if data.get("mode") == "project":
         data["catalog"] = catalog.light(data["catalog"])
         data["since_seen"] = changes.since_seen(cfg)
+    data["marks"] = marks.load(cfg)                          # stars and revision flags on rows, cards and the Marked view
     return data
 
 

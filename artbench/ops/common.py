@@ -3,11 +3,14 @@ from .. import catalog, config, scan
 from ..errors import NotFound
 
 
-WRITE_OPS = {"task_add", "task_update", "note", "meta", "move", "send", "pull", "bring_in", "engine_report", "doctor", "blender_report", "blender_notes_send",
+WRITE_OPS = {"task_add", "task_update", "mark", "export", "note", "meta", "move", "send", "pull", "bring_in", "engine_report", "doctor", "blender_report", "blender_notes_send",
              "open_in_blender", "layout_settings"}
 
 
 BRIDGE_ONLY = {"engine_report", "blender_report", "blender_notes_send"}   # the bridges' doors (HTTP), not an agent's (MCP, command line)
+
+
+PAGE_ONLY = {"export_plan", "export"}     # the page's and the command line's: an AI has no folder of the person's to fill
 
 
 # Operations on the art folder: a project-mode project (the engine project alone) has none of these.

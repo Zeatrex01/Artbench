@@ -60,6 +60,24 @@ def build(cfg, dump):
 
 
 
+def textures_of(by_path, entry):
+    """The textures a model brings with it: followed through materials (the ones it uses itself, import remaps, and
+    those of the prefabs built on it alone; a prefab holding other models too is left out, its materials may be
+    theirs), and the textures beside it named after it (Sword.fbx: Sword_BaseColor.png), the art folder's own rule.
+    `by_path` maps catalog paths to entries. Paths, sorted."""
+    def materials(e):
+        return [by_path[u["path"]] for u in e.get("uses", []) if u["kind"] == "material" and u["path"] in by_path]
+    found = materials(entry)
+    for user in entry.get("used_by", []):
+        prefab = by_path.get(user["path"]) if user["kind"] == "prefab" else None
+        if prefab and sum(1 for u in prefab.get("uses", []) if u["kind"] == "model") == 1:
+            found += materials(prefab)
+    stem = os.path.splitext(entry["name"])[0].lower()
+    beside = {e["path"] for e in by_path.values() if e["kind"] == "texture" and e["folder"] == entry["folder"]
+              and (os.path.splitext(e["name"])[0].lower() == stem or e["name"].lower().startswith(stem + "_"))}
+    return sorted({u["path"] for m in found for u in m.get("uses", []) if u["kind"] == "texture"} | beside)
+
+
 def light(cat):
     """The catalog the page polls: each entry carries used_by_count and uses_count instead of the two lists (the card
     asks for one asset in full)."""

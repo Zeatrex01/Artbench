@@ -1,6 +1,6 @@
 """Operations that move files between the art folder and the engine, and what they read first: plans, sends,
-pulls, model snapshots and diffs, previews, a forced refresh."""
-from .. import asset_meta, deploy, engines, package, thumbs
+pulls, model snapshots and diffs, previews, a forced refresh; and exports of game-project models into a folder."""
+from .. import asset_meta, deploy, engines, export, package, thumbs
 from .common import _cfg, _desktop_item, _engine_only_entry
 from .assets import op_overview
 
@@ -33,7 +33,7 @@ def op_bring_in_plan(args):
 
 def op_bring_in(args):
     cfg = _cfg(args["project"])
-    return package.bring_in(cfg, _engine_only_entry(cfg, args["id"]), args.get("category"))
+    return package.bring_in(cfg, _engine_only_entry(cfg, args["id"]), args.get("category"), textures=bool(args.get("textures")))
 
 
 def op_metadata_snapshot(args):
@@ -57,3 +57,11 @@ def op_preview(args):
     cfg = _cfg(args["project"])
     state, png = thumbs.status(cfg, _desktop_item(cfg, args["id"])["path"])
     return {"state": state, "path": png}
+
+
+def op_export_plan(args):
+    return export.plan(_cfg(args["project"]), args["ids"], args["dest"])
+
+
+def op_export(args):
+    return export.run(_cfg(args["project"]), args["ids"], args["dest"])

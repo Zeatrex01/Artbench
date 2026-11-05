@@ -2,7 +2,7 @@
 layout, the reference graph, scene contents."""
 import os
 
-from .. import catalog, changes, config, engines, github_link, graph, layout, scan, scenes, tasks
+from .. import catalog, changes, config, engines, github_link, graph, layout, marks, scan, scenes, tasks
 from ..errors import NotFound
 from .common import GRAPH_CAP, LIST_CAP, _cfg, _item_summary, _page
 
@@ -12,11 +12,17 @@ def op_projects(_):
              "engine_root": c.get("engine_root"), "error": c.get("error")} for c in config.projects()]
 
 
-def _catalog_summary(entry):
+def _catalog_summary(entry, marked=None):
     """The brief row an AI reads first: the id carries the path (engine:<path under Assets/>); artbench_asset has the
-    rest."""
-    return {"id": entry["id"], "kind": entry["kind"], "usage": entry["usage"],
-            "used_by_count": entry.get("used_by_count", len(entry.get("used_by") or []))}
+    rest. A marked asset says so (fav, revision); others carry no such keys."""
+    row = {"id": entry["id"], "kind": entry["kind"], "usage": entry["usage"],
+           "used_by_count": entry.get("used_by_count", len(entry.get("used_by") or []))}
+    m = (marked or {}).get(entry["id"]) or {}
+    if m.get("favorite"):
+        row["fav"] = True
+    if m.get("revision"):
+        row["revision"] = True
+    return row
 
 
 def _folders(assets, top=12):
@@ -44,7 +50,7 @@ def _project_overview(cfg, state):
         "layout_issues": len(state["layout_issues"]), "force_text": cat["force_text"],
         "engine_unreachable": state["engine_unreachable"], "engine_scanned": state["engine_scanned"],
         "changes_since_seen": _changes_since_seen(cfg),
-        "folders": _folders(cat["assets"]), "tasks": _task_counts(cfg),
+        "folders": _folders(cat["assets"]), "tasks": _task_counts(cfg), "marks": marks.counts(marks.load(cfg)),
     }
 
 
@@ -74,6 +80,7 @@ def op_overview(args):
         "layout_issues": len(state["layout_issues"]), "unsorted": len(state["unsorted"]),
         "engine_unreachable": state["engine_unreachable"],
         "open_tasks": sum(1 for t in tasks.load(cfg) if t["status"] != "done"), "tasks": _task_counts(cfg),
+        "marks": marks.counts(marks.load(cfg)),
         "engine_scanned": state["engine_scanned"],
         "github": github_link.github_status(cfg),
     }
@@ -85,7 +92,8 @@ def op_search(args):
     limit = int(args.get("limit") or 20)
     state = scan.scan(cfg)
     if config.is_project_mode(cfg):
-        return [_catalog_summary(e) for e in catalog.query(state["catalog"], search=q, limit=limit)["assets"]]
+        marked = marks.load(cfg)
+        return [_catalog_summary(e, marked) for e in catalog.query(state["catalog"], search=q, limit=limit)["assets"]]
     hits = []
     for group, entries in (("desktop", state["items"]), ("engine_only", state["engine_only"]), ("placeholder", state["placeholders"])):
         for e in entries:
@@ -125,8 +133,9 @@ def op_unused(args):
     state = scan.scan(cfg)
     if config.is_project_mode(cfg):
         assets = state["catalog"]["assets"]
-        unref, unref_total = _page([_catalog_summary(a) for a in assets if a["usage"] == "unreferenced"], args)
-        by_name, by_name_total = _page([_catalog_summary(a) for a in assets if a["usage"] == "by_name"], args)
+        marked = marks.load(cfg)
+        unref, unref_total = _page([_catalog_summary(a, marked) for a in assets if a["usage"] == "unreferenced"], args)
+        by_name, by_name_total = _page([_catalog_summary(a, marked) for a in assets if a["usage"] == "by_name"], args)
         return {"unreferenced": unref, "unreferenced_total": unref_total, "by_name": by_name,
                 "by_name_total": by_name_total, "unknown": sum(1 for a in assets if a["usage"] == "unknown")}
     return {"desktop_ingame": [_item_summary(i) for i in state["items"] if i["state"] == "ingame" and i["usage"] == "unused"],
@@ -209,12 +218,14 @@ def op_layout_settings(args):
 
 def op_catalog(args):
     cfg = _cfg(args["project"])
-    page = catalog.query(scan.scan(cfg)["catalog"] if config.is_project_mode(cfg)
-                         else catalog.build(cfg, engines.dump(cfg)),
-                         kind=args.get("kind"), usage=args.get("usage"), folder=args.get("folder"),
+    cat = scan.scan(cfg)["catalog"] if config.is_project_mode(cfg) else catalog.build(cfg, engines.dump(cfg))
+    marked = marks.load(cfg)
+    if args.get("mark"):                                     # only the favourites, or only what waits for a revision
+        cat = {**cat, "assets": [a for a in cat["assets"] if (marked.get(a["id"]) or {}).get(args["mark"])]}
+    page = catalog.query(cat, kind=args.get("kind"), usage=args.get("usage"), folder=args.get("folder"),
                          search=args.get("search"), offset=args.get("offset") or 0, limit=args.get("limit") or 25)
     if args.get("detail") != "full":                         # brief rows unless the whole entry is asked for
-        page["assets"] = [_catalog_summary(a) for a in page["assets"]]
+        page["assets"] = [_catalog_summary(a, marked) for a in page["assets"]]
     return page
 
 

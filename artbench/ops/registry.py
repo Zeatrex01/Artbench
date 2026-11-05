@@ -3,7 +3,7 @@ the mapping of every failure to an OpError."""
 from .. import config
 from . import assets, machine, transfer, work
 from ..errors import Conflict, NeedsForce, NotFound, OutsideRoot, Unavailable, WarningsNotAccepted, WrongMode
-from .common import ART_ONLY, BRIDGE_ONLY, Op, OpError, WRITE_OPS, _P, _PAGE, _schema
+from .common import ART_ONLY, BRIDGE_ONLY, PAGE_ONLY, Op, OpError, WRITE_OPS, _P, _PAGE, _schema
 
 
 _DEFS = [
@@ -75,8 +75,8 @@ _DEFS = [
      "description": "Where bringing an engine-only model (engine:<path>) into the art folder would put it; category null means one must be given.",
      "params": _schema({**_P, "id": {"type": "string"}, "category": {"type": "string"}}, ["project", "id"])},
     {"name": "bring_in",
-     "description": "Copy an engine-only model into the art folder as FBX/<category>/<model>/ (textures stay in the engine). Refused when the target exists.",
-     "params": _schema({**_P, "id": {"type": "string"}, "category": {"type": "string"}}, ["project", "id", "category"])},
+     "description": "Copy an engine-only model into the art folder as FBX/<category>/<model>/; textures=true brings the textures it uses beside it. Refused when a target exists.",
+     "params": _schema({**_P, "id": {"type": "string"}, "category": {"type": "string"}, "textures": {"type": "boolean"}}, ["project", "id", "category"])},
     {"name": "metadata_snapshot",
      "description": "A desktop model's structure from Blender (objects, vertices, materials, bones, animations). state pending: call again.",
      "params": _schema({**_P, "id": {"type": "string"}}, ["project", "id"])},
@@ -87,10 +87,24 @@ _DEFS = [
 
 
 _DEFS += [
+    {"name": "mark", "description": "Mark assets: favorite true/false; revision true/false with an optional note (a note alone sets it).",
+     "params": _schema({**_P, "ids": {"type": "array", "items": {"type": "string"}}, "favorite": {"type": "boolean"},
+                        "revision": {"type": "boolean"}, "note": {"type": "string"}}, ["project", "ids"])},
+    {"name": "marks", "description": "Marked assets, revision first: [{id, favorite?, revision?, note?}]. filter: favorite or revision.",
+     "params": _schema({**_P, "filter": {"type": "string", "enum": ["favorite", "revision"]}, "limit": {"type": "integer", "default": 50}}, ["project"])},
+    {"name": "export_plan", "description": "What exporting game-project models (engine: ids) with their textures into a folder would copy: one folder per model, files already there kept.",
+     "params": _schema({**_P, "ids": {"type": "array", "items": {"type": "string"}}, "dest": {"type": "string"}}, ["project", "ids", "dest"])},
+    {"name": "export", "description": "Copy game-project models with their textures into a folder, one folder per model; nothing is overwritten.",
+     "params": _schema({**_P, "ids": {"type": "array", "items": {"type": "string"}}, "dest": {"type": "string"}}, ["project", "ids", "dest"])},
+]
+
+
+_DEFS += [
     {"name": "catalog",
-     "description": "The asset catalog, filtered (kind, usage, folder: an Assets/ prefix, search) and paged (offset, limit 25, at most 500; total). Brief rows {id, kind, usage, used_by_count}; detail=full adds path, size, used_by, uses. usage: used, unreferenced, by_name (loaded from code), unknown (not Force Text).",
+     "description": "The asset catalog, filtered (kind, usage, folder: an Assets/ prefix, search, mark) and paged (offset, limit 25, at most 500; total). Brief rows {id, kind, usage, used_by_count}; detail=full adds path, size, used_by, uses. usage: used, unreferenced, by_name (loaded from code), unknown (not Force Text).",
      "params": _schema({**_P, "kind": {"type": "string"}, "usage": {"type": "string"}, "folder": {"type": "string"},
-                        "search": {"type": "string"}, "detail": {"type": "string", "enum": ["brief", "full"]},
+                        "search": {"type": "string"}, "mark": {"type": "string", "enum": ["favorite", "revision"]},
+                        "detail": {"type": "string", "enum": ["brief", "full"]},
                         "offset": {"type": "integer", "default": 0}, "limit": {"type": "integer", "default": 25}}, ["project"])},
 ]
 
@@ -144,7 +158,7 @@ for _d in _DEFS:
 _IMPL = {name: fn for mod in (assets, work, transfer, machine) for name, fn in vars(mod).items() if name.startswith("op_")}
 
 OPS = {d["name"]: Op(d["name"], d["description"], d["params"], _IMPL["op_" + d["name"]], write=d["name"] in WRITE_OPS,
-          agents=d["name"] not in BRIDGE_ONLY, modes=("art",) if d["name"] in ART_ONLY else ("art", "project"))
+          agents=d["name"] not in BRIDGE_ONLY | PAGE_ONLY, modes=("art",) if d["name"] in ART_ONLY else ("art", "project"))
        for d in _DEFS}
 
 

@@ -1,5 +1,5 @@
 """Operations on the person's own records: tasks, notes, moves between states, history, the change feed."""
-from .. import actions, changes, store, tasks
+from .. import actions, changes, marks, store, tasks
 from .common import _cfg, _desktop_item
 
 
@@ -25,6 +25,27 @@ def op_task_add(args):
 def op_task_update(args):
     fields = {k: args.get(k) for k in ("status", "title", "note", "asset", "priority") if k in args}
     return tasks.update(_cfg(args["project"]), args["id"], **fields)
+
+
+def op_mark(args):
+    return marks.set_marks(_cfg(args["project"]), args["ids"], favorite=args.get("favorite"),
+                           revision=args.get("revision"), note=args.get("note"))
+
+
+def op_marks(args):
+    """The marked assets, those waiting for a revision first."""
+    rows = []
+    for asset, e in marks.load(_cfg(args["project"])).items():
+        if args.get("filter") and not e.get(args["filter"]):
+            continue
+        row = {"id": asset}
+        if e.get("favorite"):
+            row["favorite"] = True
+        if e.get("revision"):
+            row.update(revision=True, note=e["revision"]["note"])
+        rows.append(row)
+    rows.sort(key=lambda r: (not r.get("revision"), r["id"].lower()))
+    return rows[:int(args.get("limit") or 50)]
 
 
 def op_note(args):

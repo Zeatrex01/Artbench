@@ -34,6 +34,7 @@ js/projects.js      the projects hub: connect (Game project only, default, or ga
 js/catalog.js       project mode: art catalog by kind, unused view, asset card, kind navigation, previews and
                     model statistics in rows and cards, sort, hidden folders, Open in Blender
 js/scenes.js        scenes and what each one uses: the list (filterable) beside one scene's assets by kind
+js/marks.js         stars and revision flags, picking several assets, the pick bar, the Marked view, export to a folder
 js/i18n.js          every user-visible string, English and Turkish; t(key, vars)
 ```
 The server serves these as static files; `index.html` loads `js/app.js` as an ES module.
@@ -72,6 +73,14 @@ animator bad, data muted.
   when a view under it has something to look at. A project still opens on its assets (catalog or library) when the
   remembered view is not one of its own. Then the category → set tree and filter pills (library only), footer:
   Projects, language, scan stamps. Turkish names come from `i18n.js`.
+- **Marks and picks**: a star (amber, filled) and a Revision chip (warn, with a flag) on rows, tiles and the card;
+  the card's mark row toggles both and, while flagged, keeps the revision note in a field. Every row and tile has a
+  pick box (shown on hover, or ticked); Shift picks a range. While anything is picked a bar sits at the bottom:
+  how many, Favorite (or Unstar when all are), Revision coming (asks for an optional note), Export N models to a
+  folder (game-project models only: the folder dialog, then the plan in a dialog, then the copy), Clear. **Marked**
+  (second in the menu) lists what waits for a revision with its note first, then the favourites, with All /
+  Waiting for a revision / Favorites; the catalog's filters gain Favorites and Waiting for a revision. Bringing a
+  Unity model into the art folder asks for the category and offers its textures, ticked.
 - **Polling**: every 4 s while the window is in front; about every 30 s while it is open behind other windows (kept
   open for AI tools); never while minimised. Coming back to the window refreshes at once.
 - **Main**: topbar (view title + count, search with `/` hint, grid/list toggle, refresh), scrolling view.

@@ -49,7 +49,11 @@ export function modal({ title, body = '', items = [], checks = null, checksTitle
     m.hidden = false;
     const ticked = () => $$('[data-check]', m).filter(x => x.checked).map(x => checks[+x.dataset.check].id);
     const typed = () => ($('#dlgField', m)?.value || '').trim();
-    const done = value => { const r = value && checks ? ticked() : value && field ? (typed() || false) : value; m.hidden = true; m.innerHTML = ''; resolve(r); };
+    const done = value => {
+      const r = value && checks && field ? { field: typed(), checks: ticked() } : value && checks ? ticked()
+        : field?.allowEmpty ? (value ? typed() : null) : value && field ? (typed() || false) : value;
+      m.hidden = true; m.innerHTML = ''; resolve(r);
+    };
     $$('button', m).forEach(b => b.onclick = () => done(b.dataset.r === '1'));
     m.onclick = e => { if (e.target === m) done(false); };
     m.onkeydown = e => { if (e.key === 'Escape') done(false); if (e.key === 'Enter' && field && e.target.id === 'dlgField') done(true); };

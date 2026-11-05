@@ -582,3 +582,33 @@ pre.tree { background: var(--s2); border: 1px solid var(--line); border-radius: 
 .ins .imported { display: flex; gap: 6px; align-items: flex-start; }
 .ins .imported svg { width: 14px; height: 14px; flex: none; margin-top: 2px; }
 .ins .bringin { display: flex; flex-direction: column; gap: 10px; }
+
+/* marks: the star and the revision chip, the pick box, the bar for what is picked, the Marked view */
+.mstar { display: inline-flex; color: var(--accent); }
+.mstar svg { width: 14px; height: 14px; fill: var(--accent); stroke: var(--accent); }
+.mrev svg { width: 11px; height: 11px; margin-right: 3px; }
+.pick { flex: none; width: 18px; height: 18px; display: grid; place-items: center; padding: 0; border: 1px solid var(--line2);
+  border-radius: 4px; background: var(--s2); cursor: pointer; opacity: 0; transition: opacity var(--fast), background var(--fast); }
+.pick svg { width: 12px; height: 12px; stroke: var(--accent-ink); opacity: 0; }
+.lrow:hover .pick, .tile:hover .pick, .pick.on, body.picking .pick { opacity: 1; }
+.pick.on { background: var(--accent); border-color: var(--accent); }
+.pick.on svg { opacity: 1; }
+.tile { position: relative; }
+.tile > .pick { position: absolute; top: 8px; left: 8px; z-index: 2; }
+#pickbar { position: fixed; left: calc(var(--sidebar) + 24px); right: 24px; bottom: 18px; z-index: 25; display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px; background: var(--s3); border: 1px solid var(--line2); border-radius: var(--r2); box-shadow: var(--shadow-lg); }
+#pickbar[hidden] { display: none; }
+#pickbar b { margin-right: 6px; font-size: 13px; }
+#pickbar .btn svg { width: 14px; height: 14px; }
+.marksec .row { gap: 8px; }
+.marksec .btn.on { border-color: var(--accent-line); color: var(--text-strong); }
+.marksec .btn.on svg { stroke: var(--accent); }
+.marksec textarea { width: 100%; margin-top: 8px; }
+.mhead { margin-bottom: 14px; }
+.mhead .seg .n { margin-left: 6px; color: var(--dim); font: 11px var(--mono); }
+.mrow .mnote { display: flex; align-items: center; gap: 6px; margin-top: 3px; color: var(--warn-ink); font-size: 12px; }
+.mrow .mnote svg { width: 12px; height: 12px; flex: none; }
+.lrow:has(> .pick) { grid-template-columns: 18px 48px minmax(0, 1fr) auto auto auto; }
+.catrow:has(> .pick) { grid-template-columns: 18px 48px minmax(0, 1fr) auto auto 92px auto; }
+@media (max-width: 1100px) { .lrow:has(> .pick), .catrow:has(> .pick) { grid-template-columns: 18px 48px minmax(0, 1fr) auto; } }
+body.picking #view { padding-bottom: 84px; }

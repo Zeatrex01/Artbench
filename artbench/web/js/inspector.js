@@ -8,6 +8,7 @@ import { thumbHTML, observeThumbs } from './thumbs.js';
 import { S, KIND, STATE_LABEL, SYNC, actions, findEntry, setOf, setLabel, chipsFor, enginePathAbs, relToAssets, isPlaceholder, engineUnreachable, syncOf, changedFiles, isProject } from './state.js';
 import { taskMini, bindTaskMinis, addTask } from './tasks.js';
 import { assetCard, bindAssetCard } from './catalog.js';
+import { bindMarkSection, markSection } from './marks.js';
 
 
 /** Refresh after a write; render explicitly because the refresh skips rendering while focus sits in the inspector. */
@@ -45,6 +46,7 @@ export function renderInspector() {
     <div><h2>${esc(e.name)}</h2><div class="sub">${esc(sub)}</div><div class="chips">${chipsFor(e)}</div></div>
     ${desktop ? pathRow(t('ins.desktop'), e.path) : ''}
     ${e.engine_path ? pathRow(t('ins.unity'), e.engine_path) : ''}
+    ${markSection(e)}
     ${e.imported ? `<div class="muted imported" style="font-size:12px">${icon('inbox')} ${esc(t('ins.imported', { time: e.imported.time, from: e.imported.from }))}</div>` : ''}
     ${!desktop && !placeholder ? `<div class="sec bringin">${callout('info', t('bring.hint'))}<button class="btn primary" id="insBringIn">${icon('inbox')}${t('bring.button')}</button></div>` : ''}
     ${e.ambiguous ? `<div class="sec"><span class="label">${t('ins.ambiguous')}</span><select id="insAmbig"><option value="" selected>${t('pkg.pickOne')}</option>${e.ambiguous.map(p => `<option value="${esc(p)}">${esc(relToAssets(p))}</option>`).join('')}</select></div>` : ''}
@@ -70,18 +72,22 @@ export function renderInspector() {
   if (desktop && !metaCache.has(e.id) && !metaInflight.has(e.id)) loadMeta(e, 0);
 }
 
-/** An engine-only model into the art folder: only the model is copied (its textures stay in Unity), marked as
+/** An engine-only model into the art folder, with the textures it uses when asked (ticked by default), marked as
  * brought in from Unity; the new card opens. */
 async function bringIn(e) {
   let plan;
   try { plan = (await api.get('/api/v1/bring_in_plan', { project: S.project, id: e.id })).result; }
   catch (err) { toast(friendlyError(err.message)); return; }
   const stem = e.name.replace(/\.[^.]+$/, '');
-  const category = await modal({ title: t('bring.title', { name: e.name }), body: t('bring.body', { path: `FBX/<${t('bring.category')}>/${stem}/${e.name}` }),
+  const tex = plan.textures || [];
+  const answer = await modal({ title: t('bring.title', { name: e.name }), body: t('bring.body', { path: `FBX/<${t('bring.category')}>/${stem}/${e.name}` }),
+    checks: tex.length ? [{ id: 'textures', label: t('bring.textures', { n: tex.length }), note: tex.map(x => x.source.split(/[\\/]/).pop()).join(', '), checked: true }] : null,
     field: { label: t('bring.category'), value: plan.category || '', options: plan.categories }, ok: t('bring.ok') });
+  const category = typeof answer === 'object' && answer ? answer.field : answer;
   if (!category) return;
+  const textures = !!(answer && answer.checks && answer.checks.includes('textures'));
   try {
-    const r = (await api.post('/api/v1/bring_in', { project: S.project, id: e.id, category })).result;
+    const r = (await api.post('/api/v1/bring_in', { project: S.project, id: e.id, category, textures })).result;
     toast(t('bring.done', { path: r.id }), 'ok');
     await actions.refresh();
     actions.select(r.id);
@@ -251,6 +257,7 @@ function bindProjectCard(el, e) {
   $$('[data-copy]', el).forEach(b => b.onclick = () => navigator.clipboard.writeText(b.dataset.copy).then(() => toast(t('ui.copied'), 'ok')));
   $$('[data-reveal]', el).forEach(b => b.onclick = () => reveal(b.dataset.reveal));
   bindAssetCard(el);
+  bindMarkSection(el, e);
   bindTaskMinis(el);
   const input = $('#insTask'), add = () => { if (!input.value.trim()) return; addTask(input.value, e.id, '').then(() => commit(t('tasks.added'))); };
   input.onkeydown = ev => { if (ev.key === 'Enter') add(); }; $('#insTaskAdd').onclick = add;
@@ -264,6 +271,7 @@ function bind(el, e) {
   $$('[data-graph]', el).forEach(b => b.onclick = () => { S.graphFocus = b.dataset.graph; actions.setView('graph'); });
   const g = $('#insGraph'); if (g) g.onclick = () => showInGraph(e.engine_path);
   const bi = $('#insBringIn'); if (bi) bi.onclick = () => bringIn(e);
+  bindMarkSection(el, e);
   $$('select[data-texture]', el).forEach(s => s.onchange = () => { if (!s.value) return; api.post('/api/meta', { project: S.project, id: s.dataset.texture, engine_path: s.value }).then(() => commit(t('ins.engineMatchSaved'))).catch(err => toast(err.message)); });
   const amb = $('#insAmbig'); if (amb) amb.onchange = () => amb.value && api.post('/api/meta', { project: S.project, id: e.id, engine_path: amb.value }).then(() => commit(t('ins.engineMatchSaved'))).catch(err => toast(err.message));
   const send = $('#insSend'); if (send) send.onclick = () => sendToEngine(e);

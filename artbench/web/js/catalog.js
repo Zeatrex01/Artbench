@@ -7,6 +7,7 @@ import { $, $$, esc, fmtCount, fmtSize, prefs, emptyState, callout, toast } from
 import { S, KIND, actions, enginePathAbs } from './state.js';
 import { groupHead } from './library.js';
 import { thumbHTML } from './thumbs.js';
+import { markBadges, markOf, markSection, pickBox } from './marks.js';
 
 export const KIND_ORDER = ['model', 'prefab', 'material', 'texture', 'scene', 'mesh', 'animator', 'clip', 'shader', 'audio', 'font', 'atlas'];
 export const USAGE_CLS = { used: 'ok', unreferenced: 'warn', by_name: 'info', unknown: 'dim' };
@@ -30,7 +31,7 @@ export function pcounts() {
 
 export function filteredAssets() {
   const f = S.catFilters, words = (S.search || '').toLowerCase().split(/\s+/).filter(Boolean);
-  return catalogAssets().filter(a => (!f.kind || a.kind === f.kind) && (!f.usage || a.usage === f.usage)
+  return catalogAssets().filter(a => (!f.kind || a.kind === f.kind) && (!f.usage || a.usage === f.usage) && (!f.mark || markOf(a.id)[f.mark])
     && (!f.folder || inFolder(a, f.folder)) && words.every(w => (a.name + ' ' + a.path).toLowerCase().includes(w)));
 }
 
@@ -59,9 +60,9 @@ export const usageChip = a => `<span class="chip ${USAGE_CLS[a.usage] || 'dim'}"
 
 export function catRow(a) {
   const open = S.tasks.filter(x => x.asset === a.id && x.status !== 'done').length;
-  return `<div class="catrow lrow ${S.selected === a.id ? 'on' : ''}" data-id="${esc(a.id)}">${rowVisual(a)}
+  return `<div class="catrow lrow ${S.selected === a.id ? 'on' : ''}" data-id="${esc(a.id)}">${pickBox(a.id)}${rowVisual(a)}
     <div class="ellip"><span class="name">${esc(a.name)}</span> <span class="sub">${esc(a.folder)}</span></div>
-    <div class="meta">${usageChip(a)}${a.in_build === true ? `<span class="chip accent nodot">${t('ins.inBuild')}</span>` : ''}${open ? `<span class="chip accent nodot">${open === 1 ? t('lib.openTask') : t('lib.openTasks', { n: open })}</span>` : ''}</div>
+    <div class="meta">${markBadges(a.id)}${usageChip(a)}${a.in_build === true ? `<span class="chip accent nodot">${t('ins.inBuild')}</span>` : ''}${open ? `<span class="chip accent nodot">${open === 1 ? t('lib.openTask') : t('lib.openTasks', { n: open })}</span>` : ''}</div>
     <div class="r">${a.used_by_count ? t('cat.usedByN', { n: a.used_by_count }) : ''}</div><div class="r">${rowStats(a)}</div><div class="r">${a.size != null ? fmtSize(a.size) : ''}</div></div>`;
 }
 
@@ -160,12 +161,15 @@ export function kindNav() {
     ${kinds.map(k => `<div class="node ${f.kind === k ? 'on' : ''}" data-kind="${esc(k)}">${kindIcon(k, 'xs')}<span class="lbl">${t('kinds.' + k)}</span><span class="cnt">${c.kinds[k]}</span></div>`).join('')}</div>
     <div class="side-section"><div class="label">${t('side.filters')}</div></div>
     <div class="pills">${USAGE_ORDER.map(u => [u, catalogAssets().filter(a => a.usage === u).length]).filter(([u, n]) => n || f.usage === u)
-      .map(([u, n]) => `<span class="pill ${f.usage === u ? 'on' : ''}" data-cusage="${u}">${t('usage.' + u)}<span class="n">${n}</span></span>`).join('')}</div>`;
+      .map(([u, n]) => `<span class="pill ${f.usage === u ? 'on' : ''}" data-cusage="${u}">${t('usage.' + u)}<span class="n">${n}</span></span>`).join('')}</div>
+    <div class="pills">${['favorite', 'revision'].map(m => [m, catalogAssets().filter(a => markOf(a.id)[m]).length]).filter(([m, n]) => n || f.mark === m)
+      .map(([m, n]) => `<span class="pill ${f.mark === m ? 'on' : ''}" data-cmark="${m}">${t('marks.filter.' + m)}<span class="n">${n}</span></span>`).join('')}</div>`;
 }
 
 export function bindKindNav(el) {
   $$('.kindnav .node', el).forEach(n => n.onclick = () => { S.catFilters.kind = n.dataset.kind || null; if (S.view !== 'catalog') actions.setView('catalog'); else actions.render(); });
   $$('[data-cusage]', el).forEach(p => p.onclick = () => { const u = p.dataset.cusage; S.catFilters.usage = S.catFilters.usage === u ? null : u; actions.render(); });
+  $$('[data-cmark]', el).forEach(p => p.onclick = () => { const m = p.dataset.cmark; S.catFilters.mark = S.catFilters.mark === m ? null : m; if (S.view !== 'catalog') actions.setView('catalog'); else actions.render(); });
 }
 
 export function bindCatalog(el) {
@@ -222,6 +226,7 @@ export function assetCard(e, { pathRow, taskMini }) {
     ${isCatalog ? cardStats(e) : ''}
     <div class="chips">${e.usage ? `<span class="chip ${USAGE_CLS[e.usage] || 'dim'}">${t('usage.' + e.usage)}</span>` : ''}${e.in_build === true ? `<span class="chip accent nodot">${t('ins.inBuild')}</span>` : e.in_build === false ? `<span class="chip dim nodot">${t('ins.notInBuild')}</span>` : ''}</div>
     ${e.usage ? callout(USAGE_CLS[e.usage] === 'dim' ? 'info' : USAGE_CLS[e.usage], t('usage.explain.' + e.usage)) : ''}
+    ${markSection(e)}
     ${e.path ? pathRow(t('ins.unity'), e.path) : e.engine_path ? pathRow(t('ins.unity'), e.engine_path) : ''}
     <div class="sec"><span class="label">${t('ins.usedBy')} <span class="n">${usedByN}</span></span>${refs(usedBy, usedByN, t('ins.usedByNone'), failed)}</div>
     ${isCatalog ? `<div class="sec"><span class="label">${t('ins.uses')} <span class="n">${e.uses_count}</span></span>${refs(uses, e.uses_count, t('ins.usesNone'), failed)}</div>` : ''}

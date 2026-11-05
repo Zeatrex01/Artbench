@@ -10,7 +10,7 @@ import re
 import shutil
 import time
 
-from . import actions, asset_meta, engines, files, store, sync
+from . import actions, asset_meta, catalog, engines, files, store, sync
 from .errors import Conflict, OutsideRoot, Unavailable, WarningsNotAccepted  # noqa: F401
 
 TEAM_CHANGED = ("engine_newer", "conflict")
@@ -210,9 +210,20 @@ def _check_category(category):
     return name
 
 
+def _engine_textures(cfg, source):
+    """Absolute paths of the textures the engine model at `source` uses (catalog.textures_of), matched by file."""
+    cat = catalog.build(cfg, engines.dump(cfg))
+    root, prefix = engines.content_root(cfg), engines.of(cfg).prefix
+    absolute = lambda p: os.path.normcase(os.path.normpath(os.path.join(root, *p[len(prefix):].split("/"))))
+    by_path = {a["path"]: a for a in cat["assets"]}
+    entry = next((a for a in cat["assets"] if absolute(a["path"]) == os.path.normcase(os.path.normpath(source))), None)
+    return [os.path.join(root, *p[len(prefix):].split("/")) for p in catalog.textures_of(by_path, entry)] if entry else []
+
+
 def plan_bring_in(cfg, entry, category=None):
     """Where bringing an engine-only model in would put it: FBX/<Category>/<Model>/<file>. Without `category` the
-    guess from the engine path is used; when there is none, target and id are None and a category must be given."""
+    guess from the engine path is used; when there is none, target and id are None and a category must be given.
+    `textures` lists what can come along (bring_in with textures=True), each going beside the model."""
     source = entry["engine_path"]
     chosen = _check_category(category) if category else _guess_category(cfg, entry)
     target = item_id = None
@@ -221,15 +232,20 @@ def plan_bring_in(cfg, entry, category=None):
         target = os.path.join(cfg["state_dirs"]["ingame"], chosen, stem, entry["name"])
         item_id = os.path.relpath(target, cfg["art_root"]).replace("\\", "/")
     categories = sorted(set(cfg.get("categories", [])) | ({chosen} if chosen else set()), key=str.lower)
+    textures = []
+    for tex in _engine_textures(cfg, source):
+        beside = os.path.join(os.path.dirname(target), os.path.basename(tex)) if target else None
+        textures.append({"source": tex, "target": beside, "exists": bool(beside and os.path.exists(beside))})
     return {"source": source, "engine_path": engines.of(cfg).to_engine_path(cfg, source), "name": entry["name"],
             "category": chosen, "categories": categories, "target": target, "id": item_id,
-            "exists": bool(target and os.path.exists(target)), "textures_stay": True}
+            "exists": bool(target and os.path.exists(target)), "textures": textures}
 
 
-def bring_in(cfg, entry, category):
-    """Copies the engine model (only the model: its textures stay where the engine keeps them) to
-    FBX/<Category>/<Model>/, records both sides as agreed, marks the item as brought in from the engine
-    (`imported` in its notes, with its exact `engine_path`), and logs one BRING IN line."""
+def bring_in(cfg, entry, category, textures=False):
+    """Copies the engine model to FBX/<Category>/<Model>/ (with textures=True also the textures the plan lists,
+    beside it; without, they stay where the engine keeps them), records both sides as agreed, marks the item as
+    brought in from the engine (`imported` in its notes, with its exact `engine_path`), and logs one BRING IN line.
+    A file already at a target refuses the whole bring-in: nothing is overwritten."""
     _engine_reachable(cfg)
     p = plan_bring_in(cfg, entry, _check_category(category))
     source, target = p["source"], p["target"]
@@ -239,22 +255,28 @@ def bring_in(cfg, entry, category):
         raise OutsideRoot("source outside engine root")
     if not sync.inside(target, cfg["art_root"]):
         raise OutsideRoot("target outside art root")
+    extra = p["textures"] if textures else []
     with store.locked(cfg):
-        if os.path.exists(target):
-            raise Conflict(f"already in the art folder: {target}")
+        for path in [target] + [t["target"] for t in extra]:
+            if os.path.exists(path):
+                raise Conflict(f"already in the art folder: {path}")
         os.makedirs(os.path.dirname(target), exist_ok=True)
         sync.write_over(source, target)
         digest = files.sha(target)
         sync.record_base(cfg, p["id"], digest, files.sha(source))
+        for t in extra:                                    # each texture as agreed by both sides, like the model
+            sync.write_over(t["source"], t["target"])
+            sync.record_base(cfg, os.path.relpath(t["target"], cfg["art_root"]).replace("\\", "/"),
+                             files.sha(t["target"]), files.sha(t["source"]))
         data = store.notes(cfg)
         entry_notes = data["items"].setdefault(p["id"], {})
         entry_notes["engine_path"] = source
         entry_notes["imported"] = {"from": p["engine_path"], "time": time.strftime("%Y-%m-%d %H:%M:%S")}
         store.save_notes(cfg, data)
-        store.log(cfg, "BRING IN", source, target)
+        store.log(cfg, "BRING IN", source, target, *([f"+{len(extra)} textures"] if extra else []))
     refresh_error = sync.refresh_after_transfer(cfg, agreed_path=target)
     return {"ok": True, "id": p["id"], "path": target, "source": source, "engine_path": p["engine_path"],
-            "refresh_error": refresh_error}
+            "textures": len(extra), "refresh_error": refresh_error}
 
 
 # --- shared -------------------------------------------------------------------------------------------------------

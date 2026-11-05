@@ -31,6 +31,14 @@ sürümü indirmeye başlar. Açılışta kısa bir animasyon oynar (kalem tezg�
 tuş ya da tıklama geçer, sistemde "hareketi azalt" açıksa hiç oynamaz.
 `server.py` değişince sunucu yeniden başlatılmalı (kodu sıcak yüklemez).
 
+## Favoriler, revize notları, seçip aktarmak
+Bir varlığın kartında **Favori** (yıldız) ve **Revize gelecek** (isteğe bağlı notuyla) var; satırlarda yıldız ve
+Revize rozeti görünür, hepsi sol menüdeki **İşaretli** sekmesinde toplanır (Revize bekleyenler / Favoriler). Satırların
+solundaki kutuyla birkaç varlığı seç (Shift: aralık); alttaki çubuktan hepsini favorile, revize işaretle ya da
+**klasöre aktar**: Unity'deki modeller kullandıkları dokularla, her biri kendi klasöründe, seçtiğin klasöre kopyalanır;
+önce plan gösterilir, orada olan dosyanın üstüne yazılmaz. Unity'deki bir modeli art klasörüne alırken de dokularını
+getirmek için kutu işaretli gelir.
+
 ## Makine kontrolü
 Sol alttaki **Projeler** → **Bu makineyi kontrol et**: açık proje için motor klasörünü, motor dökümünü, art
 klasörüne yazmayı, süreçler arası proje kilidini, dosya özetini, uzun yolları (Windows), OneDrive'ı, Blender'ı ve sayfa

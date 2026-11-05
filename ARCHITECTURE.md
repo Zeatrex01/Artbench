@@ -39,6 +39,9 @@ package.py          asset package transfers: per-file send/pull plan (model + en
 sync.py             two-way sync: status from the recorded base, pull (engine -> art), force rule, archive paths  writes history
 changes.py          change feed: snapshot diff of tracked files on both sides -> changes.log
 tasks.py            task list CRUD                                                   writes history
+marks.py            favourite stars and "revision coming" flags with a note, per asset id (marks.json)   writes history
+export.py           game-project models with their textures into a folder of one's own, one folder per model,
+                    plan then copy, nothing overwritten                                                writes history
 asset_meta.py       metadata snapshots (via blender_jobs) and the structural diff, summary lines, Unity warnings, card payload
 thumbs.py           preview renders (via blender_jobs)
 graph.py            analysis: reference graph over the engine dump
@@ -148,7 +151,9 @@ Rules between layers:
 - `server.py` never touches files or decides anything; it maps a route to a function and serialises the result.
 - Analyses (`scan`, `graph`, `layout`) are pure functions of (config, disk, dump) and never write project files
   (`files.save_cache` may update the tool's own hash cache under `Artbench/`).
-- Only `actions.py` and `tasks.py` change project files, and both go through `store.log`.
+- Only `actions.py` and `tasks.py` change project files, and both go through `store.log`. `marks.py` keeps the
+  person's own records in the data folder and `export.py` writes only into the folder the person chose (never the
+  game project or the art folder); both log too.
 - Engine knowledge lives in the engine adapter (see below). Another engine means another adapter with the same dump
   shape; no other module hard-codes `Assets/` or `.meta`.
 - The page depends on the API schemas below, not on module internals.
@@ -577,12 +582,15 @@ and JSON writes are atomic, so they stay in step; the page re-reads every few se
 
 `bring_in_plan` (project, id `engine:<path>`, category?) → `{source, engine_path ("Assets/..."), name, category (the
 given one, else the first folder of the engine path that is a known category, any case, else null), categories,
-target, id (null without a category), exists, textures_stay: true}`. `bring_in` (project, id, category) copies only
-the model (temp file + rename) to `FBX/<category>/<model stem>/<file>`; its textures stay in the engine. Under the
+target, id (null without a category), exists, textures: [{source, target, exists}]}` (the textures the model uses,
+`catalog.textures_of`: through its materials and its own prefabs' materials, and the textures beside it named
+after it). `bring_in` (project, id, category, textures?) copies the model (temp file + rename) to
+`FBX/<category>/<model stem>/<file>`, and with `textures: true` those textures beside it, each recorded as agreed
+like the model; without, they stay in the engine. Any target already there refuses the whole call. Under the
 project lock it records the sync base (both sides the same), writes the item's notes `engine_path` (the exact
 engine file, so a same-name file elsewhere never makes it ambiguous) and `imported: {from: "Assets/...", time}`,
 and one history line `BRING IN <engine path> <art path>`; then the dump and change feed refresh. → `{ok, id, path,
-source, engine_path, refresh_error}`. Refused: an id that is not engine-only (not_found), a category that is not one
+source, engine_path, textures (how many came), refresh_error}`. Refused: an id that is not engine-only (not_found), a category that is not one
 folder name (bad_request), a target that exists (conflict, nothing overwritten), an unreachable engine folder
 (unavailable). Desktop items carry `imported` (null when not brought in); notes follow state moves, so the mark
 does too. The page: the engine-only card's Bring into the art folder (a dialog with the category, a list with the
@@ -648,6 +656,17 @@ Next, in this order:
 1. A canvas for tasks and for comparing art side by side.
 2. A Blender MCP that works with or without Artbench: the scene, its changes, export templates per project.
 3. Godot (an adapter producing the dump shape, see Extension points).
+
+**Marks and export** (what an everyday asset tool has). `mark` op (ids, favorite?, revision?, note?) and
+`marks` list (filter favorite | revision, revision first); overview counts them, catalog filters by `mark` and its
+brief rows carry `fav` / `revision` only when set; the page state carries the map. `export_plan` / `export`
+(ids `engine:...`, dest) are the page's and the command line's (`PAGE_ONLY`: no MCP tool, an AI has no folder of
+the person's to fill): one folder per model (Crate, Crate_2), its textures from `catalog.textures_of`, .meta left
+behind, a file already there kept, a folder inside the game project or the art folder refused, one EXPORT line.
+
+Next on the bridge: pick models and pull them into one .blend, with or without textures, through
+the Blender add-on, the place and file to save chosen by the person; exports from that .blend back the same way.
+Particles (a VFX kind for .vfx and prefabs holding a ParticleSystem, with what they use) after that.
 
 Later: issue-style tasks with images, the Unity editor bridge (live scene contents, particle previews), team mode, and
 a portable Electron build. The core stays Python standard library.
