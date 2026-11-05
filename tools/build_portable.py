@@ -8,6 +8,7 @@ built on any system (the Mac one needs no Mac).
     python tools/build_portable.py --python-zip embed.zip   # an embeddable zip you already have
     python tools/build_portable.py --target mac-arm64       # a Mac with Apple silicon (M1 and later)
     python tools/build_portable.py --target mac-x64         # a Mac with an Intel chip
+    python tools/build_portable.py --menu                   # pick in the terminal (Build.bat with nothing given)
 """
 import argparse
 import glob
@@ -221,19 +222,60 @@ def build_mac(out_zip, python_tar, arch, log=sys.stdout):
     return out_zip
 
 
+TARGETS = [("windows", "Windows (x64)"), ("mac-arm64", "macOS, Apple silicon (M1 and later)"), ("mac-x64", "macOS, Intel")]
+
+
+def choose(ask=input, out=sys.stdout):
+    """The downloads to build, picked in the terminal: one of them, all, or none (q)."""
+    out.write("\nArtbench build: which download?\n")
+    for n, (_, label) in enumerate(TARGETS, 1):
+        out.write(f"  {n}  {label}\n")
+    out.write(f"  {len(TARGETS) + 1}  All of them\n  q  Quit\n")
+    while True:
+        answer = ask("Choose: ").strip().lower()
+        if answer in ("q", "quit", ""):
+            return []
+        if answer == str(len(TARGETS) + 1):
+            return [t for t, _ in TARGETS]
+        if answer.isdigit() and 1 <= int(answer) <= len(TARGETS):
+            return [TARGETS[int(answer) - 1][0]]
+        out.write(f"Type a number from 1 to {len(TARGETS) + 1}, or q.\n")
+
+
+def build_target(target, out=None):
+    """Builds one download (its Python downloaded once into dist/cache); its zip."""
+    cache = os.path.join(ROOT, "dist", "cache")
+    if target.startswith("mac-"):
+        arch = target[len("mac-"):]
+        return build_mac(out or mac_out(arch), download_mac(arch, cache), arch)
+    return build(out or OUT, download(PYTHON_VERSION, cache))
+
+
+def menu(ask=input, out=sys.stdout):
+    """The terminal menu: choose, build each, say where the zips are."""
+    made = []
+    for target in choose(ask, out):
+        out.write(f"\nBuilding {dict(TARGETS)[target]} ...\n")
+        made.append(build_target(target))
+    if made:
+        out.write("\nDone:\n" + "".join(f"  {path}\n" for path in made))
+    return 0
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(prog="python tools/build_portable.py")
     p.add_argument("--target", choices=["windows", "mac-arm64", "mac-x64"], default="windows")
     p.add_argument("--python-zip", help="Windows: an embeddable Python zip you already have (else it is downloaded)")
     p.add_argument("--python-version", default=PYTHON_VERSION, help="Windows only; the Mac Python is pinned")
     p.add_argument("--out", default=None)
+    p.add_argument("--menu", action="store_true", help="pick the downloads to build in the terminal")
     a = p.parse_args(argv)
-    cache = os.path.join(ROOT, "dist", "cache")
-    if a.target.startswith("mac-"):
-        arch = a.target[len("mac-"):]
-        build_mac(a.out or mac_out(arch), download_mac(arch, cache), arch)
+    if a.menu:
+        return menu()
+    if a.target.startswith("mac-") or not a.python_zip and a.python_version == PYTHON_VERSION:
+        build_target(a.target, a.out)
         return 0
-    python_zip = a.python_zip or download(a.python_version, cache)
+    python_zip = a.python_zip or download(a.python_version, os.path.join(ROOT, "dist", "cache"))
     build(a.out or OUT, python_zip)
     return 0
 

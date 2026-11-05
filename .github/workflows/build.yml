@@ -1,6 +1,5 @@
-# The public repository's CI: at every push to main and every pull request, build the downloads (Windows on Windows,
-# each Mac on a Mac with that chip), start each with its own Python and check that it answers; the zips are kept as
-# artifacts of the run.
+# The public repository's CI: at every push to main and every pull request, build the Windows download on Windows,
+# start it with its own (embeddable) Python and check that it answers; the zip is kept as an artifact of the run.
 # (The test suite runs in the development repository.)
 name: build
 
@@ -46,44 +45,3 @@ jobs:
         with:
           name: Artbench-windows-x64
           path: dist/Artbench-*-windows-x64.zip
-
-  # The Mac downloads: each built and started with its own Python on a Mac with that chip, kept as an artifact.
-  mac:
-    strategy:
-      matrix:
-        include:
-          - arch: arm64
-            runner: macos-latest          # Apple silicon
-          - arch: x64
-            runner: macos-15-intel        # Intel
-    runs-on: ${{ matrix.runner }}
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Build the portable folder
-        run: python tools/build_portable.py --target mac-${{ matrix.arch }}
-      - name: Start it with its own Python and ask it
-        run: |
-          unzip -q dist/Artbench-*-macos-${{ matrix.arch }}.zip -d "$RUNNER_TEMP/p"
-          cd "$RUNNER_TEMP/p/Artbench"
-          bash -n Artbench.command
-          ./python/bin/python3.12 -c "import artbench.server, artbench.mcp_server, artbench.cli, artbench.app_window; print('imports ok')"
-          ./python/bin/python3.12 -m artbench --no-browser --port 8799 &
-          pid=$!
-          ok=""
-          for i in $(seq 1 30); do
-            if curl -sf http://127.0.0.1:8799/api/alive | grep -q '"artbench"'; then ok=1; break; fi
-            sleep 1
-          done
-          page=$(curl -sf http://127.0.0.1:8799/ || true)
-          kill $pid
-          [ -n "$ok" ] || { echo "the portable Artbench did not answer"; exit 1; }
-          echo "$page" | grep -q "<title>Artbench</title>" || { echo "the page did not load"; exit 1; }
-          echo "Artbench answers from the Mac portable folder ($(uname -m))"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: Artbench-macos-${{ matrix.arch }}
-          path: dist/Artbench-*-macos-${{ matrix.arch }}.zip

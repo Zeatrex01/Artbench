@@ -146,9 +146,9 @@ def _setup(a, out):
     return 0
 
 
-def _shortcut(out, windows=None, run=None):
+def _shortcut(out, windows=None, run=None, platform=None):
     try:
-        path = app_window.create_shortcut(config.TOOL_ROOT, sys.executable, windows=windows,
+        path = app_window.create_shortcut(config.TOOL_ROOT, sys.executable, windows=windows, platform=platform,
                                           **({"run": run} if run else {}))
     except Exception as e:                 # Unavailable, or PowerShell missing or slow
         out.write(f"No shortcut: {e}\n")
