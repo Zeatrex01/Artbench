@@ -35,6 +35,7 @@ js/catalog.js       project mode: art catalog by kind, unused view, asset card, 
                     model statistics in rows and cards, sort, hidden folders, Open in Blender
 js/scenes.js        scenes and what each one uses: the list (filterable) beside one scene's assets by kind
 js/marks.js         stars, revision flags and tags, picking several assets, the pick bar, the Marked view, export to a folder
+js/archive.js       archiving unused engine assets (plan dialog) and the Archive view with Restore
 js/checks.js        the Checks view: standards by rule, duplicates with what uses each copy, the rules card
 js/i18n.js          every user-visible string, English and Turkish; t(key, vars)
 ```
@@ -82,6 +83,9 @@ animator bad, data muted.
   (second in the menu) lists what waits for a revision with its note first, then the favourites, with All /
   Waiting for a revision / Favorites; the catalog's filters gain Favorites and Waiting for a revision. Bringing a
   Unity model into the art folder asks for the category and offers its textures, ticked.
+  Archive…: on the pick bar (when a Unity asset is picked) and on the card of a Unity asset; a dialog lists what
+  goes (+ .meta, a warning for what is loaded by name) and what stays and why, with a danger-styled OK. The Archive
+  view (under More) lists what was moved out, the latest first, each with its date and Restore.
   Catalog search takes keys (the placeholder shows a few: kind:texture, px:>2048, is:fav, tag:); CSV sits at the
   right end of the catalog's toolbar and downloads the list as it is filtered.
   History: one line on every card (clock, History of this asset, its count once loaded, a chevron); opened, the

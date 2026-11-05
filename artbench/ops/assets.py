@@ -2,7 +2,7 @@
 layout, the reference graph, scene contents."""
 import os
 
-from .. import catalog, changes, checks, config, engines, github_link, graph, layout, marks, scan, scenes, tasks
+from .. import actions, catalog, changes, checks, config, engines, github_link, graph, layout, marks, scan, scenes, tasks
 from ..errors import NotFound
 from .common import GRAPH_CAP, LIST_CAP, _cfg, _item_summary, _page
 
@@ -289,3 +289,25 @@ def op_checks_settings(args):
     cfg = _cfg(args["project"])
     changes = dict(args.get("set") or {}) or {k: args[k] for k in checks.DEFAULTS if k in args}
     return checks.set_rules(cfg, **changes) if changes else checks.rules(cfg)
+
+
+def _catalog_assets(cfg):
+    return scan.scan(cfg)["catalog"]["assets"] if config.is_project_mode(cfg) else catalog.build(cfg, engines.dump(cfg))["assets"]
+
+
+def op_archive_plan(args):
+    cfg = _cfg(args["project"])
+    return actions.archive_plan(cfg, _catalog_assets(cfg), args["ids"])
+
+
+def op_archive(args):
+    cfg = _cfg(args["project"])
+    return actions.archive(cfg, _catalog_assets(cfg), args["ids"])
+
+
+def op_archived(args):
+    return actions.archived(_cfg(args["project"]))
+
+
+def op_restore(args):
+    return actions.restore(_cfg(args["project"]), args["ids"])

@@ -32,7 +32,7 @@ ops/                operations layer, a package by subject: common (OpError, Op,
                     errors), page (what the page's own /api/* routes need; not operations, no MCP tool)
 errors.py           typed errors the modules raise (NotFound, NeedsForce, WarningsNotAccepted, OutsideRoot, ...)
 --------------------------------------------------------------------------------------------
-actions.py          mutations on files (move between state folders, reveal, open)   writes history
+actions.py          mutations on files (move between state folders, archive and restore, reveal, open) writes history
 deploy.py           send entry point: art -> engine (fingerprint warnings, .meta kept); delegates the transfer to package.py
 package.py          asset package transfers: per-file send/pull plan (model + engine-ready textures), engine layout
                     targets, team-safe default selection, textures first / model last, per-file outcome      writes history
@@ -625,7 +625,8 @@ at the end of the roadmap would wrap the same server.
 
 ## Conventions
 
-- No deletion of project files, ever. Moves go between state folders; replaced files go to `_Archive/<date>/`.
+- No deletion of project files, ever. Moves go between state folders; replaced files go to `_Archive/<date>/`; an
+  engine asset nothing uses may be archived (moved out of the game project) and restored, see Archive.
 - Every file change and every note/task change is one line in the history log.
 - Writers of project data hold the project lock (`store.locked`); JSON files are written atomically
   (`store._write_json`). Blender runs (fingerprint, thumbnails) never happen under the lock.
@@ -669,6 +670,18 @@ characters (`marks.tag_name`); an asset with no star, flag or tag left has no en
 (ids `engine:...`, dest) are the page's and the command line's (`PAGE_ONLY`: no MCP tool, an AI has no folder of
 the person's to fill): one folder per model (Crate, Crate_2), its textures from `catalog.textures_of`, .meta left
 behind, a file already there kept, a folder inside the game project or the art folder refused, one EXPORT line.
+
+**Archive** (`actions.archive_plan` / `archive` / `archived` / `restore`; the page's and the command line's,
+`PAGE_ONLY`: moving files out of the game project is the person's click, never an AI's). An engine asset goes only
+when nothing uses it (no `used_by`, project settings included) and it is not a scene in the build; one loaded by name
+(Resources) goes with a warning. The file and its sidecars (.meta) move under the same path into
+`<archive>/<date>/engine/<path under Assets>` (`sync.archive_path`: a second one on a day gets a time suffix):
+`<archive>` is the art folder's archive, or `_Archive` in the project's data folder for a game project on its own,
+never inside the game project. `archived.json` in the data folder records each `{id, path, time, files: {engine
+path: archived file}}`, the latest first. Restore moves them back (the same .meta, so the GUID and the references
+return) unless the place is taken again, which keeps it archived. One ARCHIVE / RESTORE line each; the dump is
+marked stale so the catalog follows. The page: Archive… on the pick bar and the card, and an Archive view (More)
+with Restore.
 
 **Catalog search and CSV** (the page; an AI has the catalog op's own filters). Plain words match the name or
 path; `kind:`, `usage:` (unused = unreferenced), `tag:`, `folder:`, `name:`, `is:` (fav, revision, unused, tagged,

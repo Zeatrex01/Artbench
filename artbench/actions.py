@@ -1,11 +1,15 @@
 """Mutations on project files that the page may ask for: change a model's state (move it between state folders),
-set a note or an engine link, reveal a path, open a file. Nothing is deleted; every change is one history line."""
+set a note or an engine link, archive an engine asset nothing uses and restore it, reveal a path, open a file. Nothing
+is deleted; every change is one history line."""
 import os
 import shutil
 import subprocess
+import time
 
-from . import store, sync
+from . import config, engines, store, sync
 from .errors import Conflict
+
+ARCHIVED_FILE = "archived.json"
 
 
 def set_state(cfg, item, state):
@@ -113,3 +117,106 @@ def _carry_notes(cfg, old_id, new_id):
     if old_id in data["items"]:
         data["items"][new_id] = data["items"].pop(old_id)
         store.save_notes(cfg, data)
+
+
+# --- archive: engine assets the game no longer needs, out of the game project and back ---------------------------
+
+def _archive_root(cfg):
+    """The art folder's archive; a game project on its own archives into its data folder (never into the game)."""
+    if config.is_project_mode(cfg):
+        return os.path.join(store.data_dir(cfg), "_Archive")
+    return cfg["state_dirs"]["archive"]
+
+
+def _archived_path(cfg):
+    return os.path.join(store.data_dir(cfg), ARCHIVED_FILE)
+
+
+def archived(cfg):
+    """[{id, path, time, files: {engine path: archived file}}], the latest first."""
+    data = store._read_json(_archived_path(cfg), [])
+    return data if isinstance(data, list) else []
+
+
+def archive_plan(cfg, assets, ids):
+    """{dest, archive: [{id, path, files, warn?}], blocked: [{id, reason: used | in_build | unknown, ...}]} for the
+    catalog entries `assets`. Only what nothing uses can go; one loaded by name (Resources) goes with a warning."""
+    ids = [i for i in (ids or []) if i]
+    if not ids:
+        raise ValueError("no asset ids given")
+    adapter, by_id = engines.of(cfg), {a["id"]: a for a in assets}
+    out = {"dest": os.path.join(_archive_root(cfg), time.strftime("%Y-%m-%d")), "archive": [], "blocked": []}
+    for asset_id in ids:
+        a = by_id.get(asset_id)
+        if a is None or not asset_id.startswith("engine:"):
+            out["blocked"].append({"id": asset_id, "reason": "unknown"})
+            continue
+        users = [u["path"] for u in a.get("used_by") or []]
+        if users or a.get("used_by_count"):
+            out["blocked"].append({"id": asset_id, "path": a["path"], "reason": "used", "used_by": users[:5],
+                                   "used_by_count": len(users) or a.get("used_by_count")})
+            continue
+        if a.get("in_build"):
+            out["blocked"].append({"id": asset_id, "path": a["path"], "reason": "in_build"})
+            continue
+        path = adapter.from_engine_path(cfg, a["path"])
+        files = [a["path"]] + [a["path"] + s[len(path):] for s in adapter.sidecars(path) if os.path.exists(s)]
+        row = {"id": asset_id, "path": a["path"], "files": files}
+        if a.get("usage") == "by_name":
+            row["warn"] = "by_name"
+        out["archive"].append(row)
+    return out
+
+
+def archive(cfg, assets, ids):
+    """Moves every archivable asset with its sidecars (.meta) into the archive, under the same path; a second archive
+    on one day gets a time suffix. One ARCHIVE line each. {dest, archived: n, blocked}."""
+    plan = archive_plan(cfg, assets, ids)
+    adapter, root = engines.of(cfg), engines.content_root(cfg)
+    where = {"state_dirs": {"archive": _archive_root(cfg)}}           # sync.archive_path's dated, never-overwriting name
+    with store.locked(cfg):
+        records = archived(cfg)
+        for row in plan["archive"]:
+            moved = {}
+            for engine_path in row["files"]:
+                src = adapter.from_engine_path(cfg, engine_path)
+                if not os.path.exists(src):
+                    continue
+                dest = sync.archive_path(where, "engine", root, src)
+                os.makedirs(os.path.dirname(dest), exist_ok=True)
+                shutil.move(src, dest)
+                moved[engine_path] = dest
+            if moved:
+                records.insert(0, {"id": row["id"], "path": row["path"], "time": time.time(), "files": moved})
+                store.log(cfg, "ARCHIVE", row["id"], next(iter(moved.values())))
+        store._write_json(_archived_path(cfg), records)
+    adapter.mark_dump_stale(cfg, time.time())
+    return {"dest": plan["dest"], "archived": len(plan["archive"]), "blocked": plan["blocked"]}
+
+
+def restore(cfg, ids):
+    """Moves archived assets back to where they were, sidecars too (the same GUID, so references return). One whose
+    place is taken again stays in the archive. {restored: [ids], skipped: [{id, reason: exists | unknown}]}."""
+    adapter, wanted, out = engines.of(cfg), set(ids or []), {"restored": [], "skipped": []}
+    with store.locked(cfg):
+        records, keep = archived(cfg), []
+        for rec in records:
+            if rec["id"] not in wanted or rec["id"] in out["restored"]:
+                keep.append(rec)
+                continue
+            targets = {p: adapter.from_engine_path(cfg, p) for p in rec["files"]}
+            if any(os.path.exists(t) for t in targets.values()):
+                out["skipped"].append({"id": rec["id"], "reason": "exists"})
+                keep.append(rec)
+                continue
+            for engine_path, kept in rec["files"].items():
+                os.makedirs(os.path.dirname(targets[engine_path]), exist_ok=True)
+                shutil.move(kept, targets[engine_path])
+            out["restored"].append(rec["id"])
+            store.log(cfg, "RESTORE", rec["id"], rec["path"])
+        store._write_json(_archived_path(cfg), keep)
+    found = {r["id"] for r in records}
+    out["skipped"] += [{"id": i, "reason": "unknown"} for i in sorted(wanted - found)]
+    if out["restored"]:
+        adapter.mark_dump_stale(cfg, time.time())
+    return out

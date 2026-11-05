@@ -39,6 +39,11 @@ solundaki kutuyla birkaç varlığı seç (Shift: aralık); alttaki çubuktan he
 önce plan gösterilir, orada olan dosyanın üstüne yazılmaz. Unity'deki bir modeli art klasörüne alırken de dokularını
 getirmek için kutu işaretli gelir.
 
+**Arşivle**: hiçbir şeyin kullanmadığı Unity varlıklarını seçip alttaki çubuktan (ya da kartından) **Arşivle…** de.
+Dosya `.meta`'sıyla birlikte oyun projesinin dışına, arşive taşınır; silinmez. Bir prefab ya da materyalin kullandığı
+varlık arşivlenmez, pencere neden kaldığını söyler. **Arşiv** sekmesinde (Daha fazla altında) **Geri al** dosyayı aynı
+GUID ile eski yerine koyar, referanslar geri gelir. Bu işi yalnızca sen yaparsın; AI'nın arşiv aracı yok.
+
 Katalog araması anahtar kelimeleri anlar: `kind:texture`, `usage:unused`, `tag:kahraman`, `folder:Props`, `is:fav`,
 `is:revision`, `px:>2048`, `tris:>10k`, `size:>2mb`; başına `-` koyunca tersine çevirir (`kind:model -barrel`).
 Araç çubuğunun sağındaki **CSV** süzülmüş listeyi tablo programı için indirir (ad, tür, klasör, kullanım, boyut,

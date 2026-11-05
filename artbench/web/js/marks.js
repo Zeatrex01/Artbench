@@ -8,6 +8,7 @@ import { t } from './i18n.js';
 import { $, $$, esc, toast, modal, emptyState, prefs } from './ui.js';
 import { S, KIND, actions, findEntry, isProject } from './state.js';
 import { kindIcon, rowVisual } from './catalog.js';
+import { archiveFlow } from './archive.js';
 
 export const markOf = id => (S.data?.marks || {})[id] || {};
 /** [[tag, assets carrying it]], the most used first. */
@@ -64,10 +65,12 @@ export function renderPickBar() {
     <button class="btn sm" id="pkRev">${icon('flag')}${t('marks.revisionComing')}</button>
     <button class="btn sm" id="pkTag">${icon('plus')}${t('pick.tag')}</button>
     <button class="btn sm primary" id="pkExport" ${models ? '' : 'disabled'} title="${models ? '' : t('pick.exportOnlyModels')}">${icon('folder')}${t('pick.export', { n: models })}</button>
+    ${ids.some(id => id.startsWith('engine:')) ? `<button class="btn sm" id="pkArch" title="${t('arch.pickTitle')}">${icon('trash')}${t('arch.button')}</button>` : ''}
     <div class="grow"></div><button class="btn ghost sm" id="pkClear">${icon('x')}${t('pick.clear')}</button>`;
   $('#pkFav').onclick = () => setMarks(ids, { favorite: !allFav });
   $('#pkRev').onclick = () => askRevision(ids);
   $('#pkTag').onclick = () => askTag(ids);
+  const arch = $('#pkArch'); if (arch) arch.onclick = () => archiveFlow(ids);
   $('#pkExport').onclick = () => exportModels(exportable());
   $('#pkClear').onclick = () => { S.picked.clear(); actions.renderView(); };
 }
@@ -100,7 +103,8 @@ export function markSection(e) {
   const known = allTags().map(([x]) => x).filter(x => !mine.includes(x));
   return `<div class="sec marksec"><div class="row">
       <button class="btn sm ${m.favorite ? 'on' : ''}" id="mkFav">${icon('star')}${t(m.favorite ? 'marks.unfavorite' : 'marks.favorite')}</button>
-      <button class="btn sm ${m.revision ? 'on' : ''}" id="mkRev">${icon('flag')}${t(m.revision ? 'marks.revisionDone' : 'marks.revisionComing')}</button></div>
+      <button class="btn sm ${m.revision ? 'on' : ''}" id="mkRev">${icon('flag')}${t(m.revision ? 'marks.revisionDone' : 'marks.revisionComing')}</button>
+      ${String(e.id || '').startsWith('engine:') && !e.placeholder ? `<div class="grow"></div><button class="btn ghost sm" id="mkArch" title="${t('arch.cardTitle')}">${icon('trash')}${t('arch.button')}</button>` : ''}</div>
     ${m.revision ? `<textarea id="mkNote" rows="2" placeholder="${t('marks.notePh')}">${esc(m.revision.note || '')}</textarea>` : ''}
     <div class="mtags">${mine.map(x => `<span class="mtag">${esc(x)}<button data-untag="${esc(x)}" title="${t('marks.tagRemove')}">${icon('x')}</button></span>`).join('')}
       <input type="text" id="mkTag" list="mkTagList" placeholder="${t('marks.tagPh')}" maxlength="40" spellcheck="false">
@@ -111,6 +115,7 @@ export function bindMarkSection(el, e) {
   const rev = $('#mkRev', el); if (rev) rev.onclick = () => (markOf(e.id).revision ? setMarks([e.id], { revision: false }) : askRevision([e.id]));
   const note = $('#mkNote', el);
   if (note) note.onchange = () => setMarks([e.id], { revision: true, note: note.value });
+  const arch = $('#mkArch', el); if (arch) arch.onclick = () => archiveFlow([e.id]);
   const tag = $('#mkTag', el);
   if (tag) tag.onkeydown = ev => { if (ev.key === 'Enter' && tag.value.trim()) setMarks([e.id], { tags_add: [tag.value] }); };
   $$('[data-untag]', el).forEach(b => b.onclick = () => setMarks([e.id], { tags_remove: [b.dataset.untag] }));
