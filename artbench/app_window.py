@@ -167,11 +167,23 @@ def shortcut_script(target, arguments, workdir, icon):
     return "; ".join(lines)
 
 
-def create_shortcut(tool_root, python_exe, windows=None, run=subprocess.run):
-    """Writes the desktop shortcut that opens the app window; its path. Windows only (`Unavailable` elsewhere)."""
+def _mac_launcher(tool_root, python_exe, home):
+    """~/Desktop/Artbench.command: a double-click opens the app window from Terminal's launcher."""
+    path = os.path.join(home, "Desktop", "Artbench.command")
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        f.write(f'#!/bin/bash\ncd "{tool_root}" || exit 1\nexec "{python_exe}" -m artbench --app\n')
+    os.chmod(path, 0o755)
+    return path
+
+
+def create_shortcut(tool_root, python_exe, windows=None, run=subprocess.run, platform=None, home=None):
+    """Writes the desktop shortcut that opens the app window; its path. Windows: a .lnk; a Mac: Artbench.command on
+    the desktop; elsewhere `Unavailable`."""
     windows = (os.name == "nt") if windows is None else windows
+    if not windows and (sys.platform if platform is None else platform) == "darwin":
+        return _mac_launcher(tool_root, python_exe, home or os.path.expanduser("~"))
     if not windows:
-        raise Unavailable("the desktop shortcut is made on Windows; elsewhere run: python -m artbench --app")
+        raise Unavailable("the desktop shortcut is made on Windows and macOS; elsewhere run: python -m artbench --app")
     icon = os.path.join(tool_root, "artbench", "web", "img", "artbench.ico")
     script = shortcut_script(windowless_python(python_exe), "-m artbench --app", tool_root, icon)
     done = run(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", script],
@@ -193,7 +205,7 @@ def _tk():
 
 def _pick_folder_powershell(title, initial, run):
     """Windows' own folder dialog through PowerShell (the embeddable Python of the portable folder has no tkinter).
-    Output is UTF-8 so Turkish folder names come back intact."""
+    Output is UTF-8 so non-ASCII folder names come back intact."""
     q = lambda s: "'" + str(s).replace("'", "''") + "'"
     script = "; ".join([
         "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8",
@@ -211,9 +223,24 @@ def _pick_folder_powershell(title, initial, run):
     return os.path.normpath(chosen) if done.returncode == 0 and chosen else None
 
 
-def pick_folder(title="Choose a folder", initial=None, windows=None, run=None, use_tk=None):
-    """Native folder dialog on the machine running the server (local tool). None when cancelled. tkinter when the
-    Python has it, else PowerShell's dialog on Windows."""
+def _pick_folder_osascript(title, initial, run):
+    """macOS's own folder dialog through AppleScript: always there, and safe from the server's threads (Tk may open
+    a window only on the main thread on a Mac). Cancel exits non-zero."""
+    q = lambda s: '"' + str(s).replace("\\", "\\\\").replace('"', '\\"') + '"'
+    script = f"POSIX path of (choose folder with prompt {q(title)}"
+    if initial and os.path.isdir(initial):
+        script += f" default location (POSIX file {q(initial)})"
+    script += ")"
+    done = run(["osascript", "-e", script], capture_output=True, timeout=3600)
+    chosen = (done.stdout or b"").decode("utf-8", "replace").strip()
+    return os.path.normpath(chosen) if done.returncode == 0 and chosen else None
+
+
+def pick_folder(title="Choose a folder", initial=None, windows=None, run=None, use_tk=None, platform=None):
+    """Native folder dialog on the machine running the server (local tool). None when cancelled. Finder's on a Mac;
+    tkinter when the Python has it; else PowerShell's dialog on Windows."""
+    if (sys.platform if platform is None else platform) == "darwin":
+        return _pick_folder_osascript(title, initial, run or subprocess.run)
     use_tk = _tk() if use_tk is None else use_tk
     if not use_tk:
         if (os.name == "nt") if windows is None else windows:

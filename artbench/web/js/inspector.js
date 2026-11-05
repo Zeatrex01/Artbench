@@ -95,7 +95,7 @@ async function bringIn(e) {
   } catch (err) { toast(friendlyError(err.message)); }
 }
 
-/** Server messages the artist may meet, in plain Turkish; anything else passes through. */
+/** Server messages the artist may meet, in plain words of the page's language; anything else passes through. */
 function friendlyError(msg) {
   if (/no engine target/.test(msg)) return t('err.noTarget');
   if (/changed since the last sync|no sync record|changed since the plan/.test(msg)) return t('err.raced');
@@ -221,7 +221,7 @@ function syncBlock(e, canSend, canPull) {
   const side = (name, state, time, size) => `<div class="side ${state}">
     <span class="k">${name}</span><span class="v">${word(state)}</span>
     ${state === 'missing' ? '<span class="t">—</span>' : `<span class="t">${time ? fmtDateTime(time) : ''}</span><span class="t">${size != null ? fmtSize(size) : ''}</span>`}</div>`;
-  // Times sit inside parentheses so no language needs a suffix after them (Turkish: "10:53'te" vs "11:40'ta").
+  // Times sit inside parentheses so no language needs to inflect a word after them.
   const since = synced ? t('syncb.since', { time: synced }) : '';
   const text = {
     same: changedFiles(e).length ? t('pkg.filesChanged', { names: changedFiles(e).join(', ') }) : synced ? t('syncb.same', { time: synced }) : t('syncb.sameNoTime'),
@@ -281,7 +281,7 @@ function bind(el, e) {
   const blend = $('#insBlend'); if (blend) blend.onchange = () => api.post('/api/meta', { project: S.project, id: e.id, blend: blend.value }).then(() => commit(t('blend.saved'))).catch(err => toast(err.message));
   const note = $('#insNote');
   const saveNote = () => { if (note.value === (e.note || '')) return; api.post('/api/meta', { project: S.project, id: e.id, note: note.value }).then(() => commit(t('ins.noteSaved'))).catch(err => toast(err.message)); };
-  note.onblur = saveNote; note.onkeydown = ev => { if (ev.key === 'Enter' && ev.ctrlKey) note.blur(); };
+  note.onblur = saveNote; note.onkeydown = ev => { if (ev.key === 'Enter' && (ev.ctrlKey || ev.metaKey)) note.blur(); };
   const input = $('#insTask'), add = () => { if (!input.value.trim()) return; addTask(input.value, e.id, '').then(() => commit(t('tasks.added'))); };
   input.onkeydown = ev => { if (ev.key === 'Enter') add(); }; $('#insTaskAdd').onclick = add;
   bindTaskMinis(el);

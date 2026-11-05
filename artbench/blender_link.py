@@ -149,7 +149,7 @@ def open_file(cfg, path):
     scene. Unavailable when no Blender is found."""
     exe = blender_jobs.blender(cfg)
     if not exe:
-        raise Unavailable("Blender was not found: set \"blender\" in the project config to blender.exe, or put Blender on PATH")
+        raise Unavailable("Blender was not found: set \"blender\" in the project config to Blender's program (blender.exe; on a Mac Blender.app/Contents/MacOS/Blender), or put Blender on PATH")
     cmd = [exe, path] if path.lower().endswith(".blend") else [exe, "--python-expr", IMPORT_EXPR, "--", path]
     flags = {"creationflags": 0x00000008 | 0x00000200} if sys.platform == "win32" else {"start_new_session": True}
     subprocess.Popen(cmd, close_fds=True, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, **flags)

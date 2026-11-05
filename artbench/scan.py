@@ -9,12 +9,12 @@ from . import asset_meta, catalog, config, engines, files, layout, store, sync
 # --- engine side ------------------------------------------------------------------------------------------------
 
 def engine_models(cfg, dump):
-    """Model files under the engine root, by lower-case file name -> [absolute path]."""
+    """Model files under the engine root, by files.name_key(file name) -> [absolute path]."""
     return engine_files(cfg, dump, "model", tuple(cfg["model_extensions"]))
 
 
 def engine_files(cfg, dump, kind, exts):
-    """Files of one kind under the engine root, by lower-case file name -> [absolute path]. Found by name anywhere,
+    """Files of one kind under the engine root, by files.name_key(file name) -> [absolute path]. Found by name anywhere,
     so files the team moved are followed on the next scan."""
     root = cfg.get("engine_root")
     index = {}
@@ -28,12 +28,12 @@ def engine_files(cfg, dump, kind, exts):
                 continue
             p = os.path.normpath(os.path.join(dump["assets_root"], asset["path"]))
             if p.lower().startswith(prefix):
-                index.setdefault(os.path.basename(p).lower(), []).append(p)
+                index.setdefault(files.name_key(os.path.basename(p)), []).append(p)
                 seen.add(os.path.normcase(p))
     # Files the dump does not know yet (no .meta until Unity imports them, e.g. just sent) still count.
     for p in files.walk(root, cfg["engine_ignore"]):
         if p.lower().endswith(exts) and os.path.normcase(os.path.normpath(p)) not in seen:
-            index.setdefault(os.path.basename(p).lower(), []).append(os.path.normpath(p))
+            index.setdefault(files.name_key(os.path.basename(p)), []).append(os.path.normpath(p))
     return index
 
 
@@ -261,7 +261,7 @@ def _package(cfg, item, notes, textures, base, agreed, compare=True):
 def _match_texture(cfg, tex, meta, textures, base, agreed, model):
     """Finds the texture's engine copy by name. A copy beside the model's engine copy wins; a name that does not carry
     the model's stem (Albedo.png) is matched only there, so it never binds to another model's file."""
-    candidates = textures.get(tex["name"].lower(), [])
+    candidates = textures.get(files.name_key(tex["name"]), [])
     pinned = meta.get("engine_path") if sync.engine_note_ok(cfg, tex["name"], meta.get("engine_path")) else None
     if not pinned:
         model_dir = os.path.normcase(os.path.dirname(model["engine_path"])) if model.get("engine_path") else None
@@ -304,7 +304,7 @@ def _blend_of(cfg, item, notes, blends):
 def _match_engine(cfg, item, meta, engine, usage, seen_engine, base, agreed):
     """Fills engine_path / sync / usage of a desktop item from the engine copy with the same file name, or the one
     its engine_path note pins (honoured only when it passes sync.engine_note_ok)."""
-    candidates = engine.get(item["name"].lower(), [])
+    candidates = engine.get(files.name_key(item["name"]), [])
     pinned = meta.get("engine_path") if sync.engine_note_ok(cfg, item["name"], meta.get("engine_path")) else None
     target = pinned or (candidates[0] if candidates else None)
     if not target or not os.path.exists(target):

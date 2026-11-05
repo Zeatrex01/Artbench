@@ -4,6 +4,7 @@ is deleted; every change is one history line."""
 import os
 import shutil
 import subprocess
+import sys
 import time
 
 from . import config, engines, store, sync
@@ -98,14 +99,32 @@ def _engine_path_for(cfg, item_id, value):
     return path
 
 
+def opener(action, path, platform=None):
+    """The command that reveals (`reveal`: the folder, with the file selected where the system can) or opens
+    (`open`: with its default app, Blender for a .blend) a path: Explorer on Windows, Finder on a Mac, xdg-open on
+    Linux. None for opening on Windows, which goes through os.startfile."""
+    platform = sys.platform if platform is None else platform
+    folder = os.path.isdir(path)
+    if platform == "win32":
+        if action == "open":
+            return None
+        return ["explorer", path] if folder else ["explorer", "/select,", path]
+    if platform == "darwin":
+        return ["open", path] if action == "open" or folder else ["open", "-R", path]
+    return ["xdg-open", path if action == "open" or folder else os.path.dirname(path)]
+
+
 def reveal(path):
-    path = os.path.normpath(path)
-    args = ["explorer", path] if os.path.isdir(path) else ["explorer", "/select,", path]
-    subprocess.Popen(args)
+    subprocess.Popen(opener("reveal", os.path.normpath(path)))
 
 
 def open_file(path):
-    os.startfile(os.path.normpath(path))      # Blender for .blend, the default app otherwise
+    path = os.path.normpath(path)
+    args = opener("open", path)
+    if args is None:
+        os.startfile(path)                    # Blender for .blend, the default app otherwise
+    else:
+        subprocess.Popen(args)
 
 
 def _item_id(cfg, path):

@@ -7,7 +7,7 @@ import os
 import shutil
 import time
 
-from . import asset_meta, changes, engines, store
+from . import asset_meta, changes, engines, files, store
 from .errors import NeedsForce, OutsideRoot, Unavailable  # noqa: F401  (re-exported for callers)
 
 
@@ -97,7 +97,7 @@ def engine_note_ok(cfg, name, path):
     would then overwrite."""
     root = cfg.get("engine_root")
     return bool(path and root and inside(path, root) and os.path.isfile(path)
-                and os.path.basename(path).lower() == name.lower())
+                and files.name_key(os.path.basename(path)) == files.name_key(name))
 
 
 def inside(path, root):

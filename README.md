@@ -97,7 +97,13 @@ Claude Code in one click and gives the lines for Gemini CLI and Codex.
 [Releases](../../releases), or the [download page](https://artbench.malik3d.page/)), unzip it anywhere (not inside a game project) and double-click `Artbench.bat`. Python is
 inside; there is nothing to install. The `README.txt` in the folder covers the rest.
 
-**From source**, on Windows, Linux or macOS (macOS untested). You need Python 3.11 or newer. Artbench uses the standard library only: nothing to install. Blender is optional; it
+**macOS, from source.** Install Python 3.11 or newer ([python.org](https://www.python.org/downloads/) or
+`brew install python`), download the source ([zip](../../archive/refs/heads/main.zip) or `git clone`) and double-click
+`Artbench.command`. The first time, macOS may call it a file from an unidentified developer: right-click it, choose
+Open, then Open again. `python3 -m artbench shortcut` puts the same launcher on the desktop. Blender is found in
+Applications.
+
+**From source**, on Windows, Linux or macOS. You need Python 3.11 or newer. Artbench uses the standard library only: nothing to install. Blender is optional; it
 adds previews and model statistics.
 
 ```bash

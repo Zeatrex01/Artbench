@@ -5,6 +5,7 @@ import json
 import os
 import time
 import posixpath
+import unicodedata
 import urllib.parse
 
 from . import config, store
@@ -76,6 +77,12 @@ def save_cache():
             for path in [p for p in list(_hash_cache) if not os.path.exists(p)]:
                 _hash_cache.pop(path, None)
         store._write_json(HASH_CACHE_PATH, dict(_hash_cache), compact=True)
+
+
+def name_key(name):
+    """A file name as it is compared across sources: lower case and composed Unicode, so "Café.png" from a Windows
+    disk and the decomposed form a Mac may store match."""
+    return unicodedata.normalize("NFC", name).lower()
 
 
 # --- folder walk ---------------------------------------------------------------------------------------------------

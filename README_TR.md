@@ -25,6 +25,9 @@ Masaüstünde durur, repolara girmez. Sadece Python 3 ister; Unity'ye, eklentiye
 ## Çalıştırmak
 Sayfa İngilizce açılır; sol alttaki **TR / EN** düğmesi dili değiştirir ve tarayıcı bunu hatırlar.
 
+**Mac:** Python 3.11+ kur (python.org ya da `brew install python`), kaynak kodu indir ve `Artbench.command`'a çift tıkla.
+İlk açılışta macOS "tanımlanamayan geliştirici" derse: sağ tık → Aç → Aç. Blender, Uygulamalar klasöründe bulunur.
+
 **Hazır sürüm (önerilen):** yukarıdaki indirme; zip'i aç, `Artbench.bat`'a çift tıkla, Artbench kendi penceresinde
 açılır. **Kaynak koddan:** kökteki `Artbench.bat` bilgisayarda Python 3.11+ varsa onunla açar; yoksa bunu söyler ve hazır
 sürümü indirmeye başlar. Açılışta kısa bir animasyon oynar (kalem tezgâhı çizer); pencere başına bir kez, herhangi bir

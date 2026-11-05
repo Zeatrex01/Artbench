@@ -76,8 +76,9 @@ workspace.py        connecting projects: engine check, art folder link/create fr
 github_link.py      the GitHub account a project pushes as, compared with the account gh is set to (read-only)
 mcp_link.py         the AI connection: which AI tools start Artbench's MCP server (read-only), adding it to Claude Code
 app_window.py       the page as a desktop app: a Chromium browser's app mode with its own profile, the server's stop
-                    when the window closes (or after a quiet spell), the log without a console, the Windows desktop
-                    shortcut, the native folder picker (tkinter, else PowerShell on Windows)
+                    when the window closes (or after a quiet spell), the log without a console, the desktop launcher
+                    (Windows .lnk, macOS .command), the native folder picker (Finder's on a Mac, tkinter, else
+                    PowerShell on Windows)
 files.py            files on disk for both sides: content hash (SHA-256) and its cache, the folder walk, the files a
                     .gltf names (gltf_references)
 config.py           project configuration: art_inventory.json + DEFAULTS -> resolved paths; the page server's PORT
@@ -611,8 +612,16 @@ browser that exits within 5 s handed the window to a process already running; th
 exists (a normal tab opens), the server stops after 5 minutes without a request. Without a console (`pythonw`)
 output goes to `.cache/artbench.log`. The page has a web manifest (`web/manifest.webmanifest`, PNG icons) so the
 window carries Artbench's name and mark. `python -m artbench shortcut` writes `Artbench.lnk` on the real desktop
-(PowerShell, WScript.Shell; `pythonw -m artbench --app`, icon `web/img/artbench.ico`); elsewhere it says it is
-Windows only.
+(PowerShell, WScript.Shell; `pythonw -m artbench --app`, icon `web/img/artbench.ico`); on a Mac it writes
+`~/Desktop/Artbench.command` (cd to the tool, `<python> -m artbench --app`, executable); elsewhere it says so.
+
+**macOS.** The source folder's `Artbench.command` (executable) finds Python 3.11+ (python3.13 … python3) and starts
+`-m artbench --app`; without one it says where to get it. Reveal and Open go through `open -R` / `open` (Finder), on
+Linux through `xdg-open`, on Windows through Explorer and `os.startfile` (`actions.opener`). Blender is looked for
+in `/Applications`, `~/Applications` and Steam's Mac folder. The folder dialog is AppleScript's `choose folder`
+(`osascript`): Tk may open a window only on the main thread there, and the server answers from threads. File names
+are compared by `files.name_key` (composed Unicode, lower case), since a Mac may store an accented name decomposed.
+`.github/workflows/mac.yml` runs the suite and starts the server on a macOS runner, by hand.
 
 `tools/build_portable.py` (a build tool, outside the package) writes `dist/Artbench-portable-win64.zip`: one folder
 `Artbench/` with python.org's embeddable Python in `python/` (its `python3XX._pth` gets `..`, so `artbench`

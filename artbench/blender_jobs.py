@@ -21,7 +21,10 @@ from . import config, files, store
 CACHE_DIR = os.path.join(config.TOOL_ROOT, ".cache")
 DEFAULT_BLENDER = [r"C:\Program Files (x86)\Steam\steamapps\common\Blender\blender.exe",
                    r"C:\Program Files\Blender Foundation\Blender 4.5\blender.exe",
-                   r"C:\Program Files\Blender Foundation\Blender 4.2\blender.exe"]
+                   r"C:\Program Files\Blender Foundation\Blender 4.2\blender.exe",
+                   "/Applications/Blender.app/Contents/MacOS/Blender",
+                   os.path.expanduser("~/Applications/Blender.app/Contents/MacOS/Blender"),
+                   os.path.expanduser("~/Library/Application Support/Steam/steamapps/common/Blender/Blender.app/Contents/MacOS/Blender")]
 PRIORITY_META = 0
 PRIORITY_THUMB = 5
 PRIORITY_STATS = 8            # catalog statistics: after the previews someone is looking at
