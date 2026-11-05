@@ -4,9 +4,10 @@
 
 **The art side of your game in one place, for you and for your AI tools.**
 
-### ⬇ [Download Artbench for Windows](https://github.com/Zeatrex01/Artbench/releases/latest/download/Artbench-windows-x64.zip)
+### ⬇ [Download Artbench for Windows](https://github.com/Zeatrex01/Artbench/releases/latest/download/Artbench-windows-x64.zip) · macOS: [Apple silicon](https://github.com/Zeatrex01/Artbench/releases/latest/download/Artbench-macos-arm64.zip) · [Intel](https://github.com/Zeatrex01/Artbench/releases/latest/download/Artbench-macos-x64.zip)
 
-Unzip it anywhere and double-click `Artbench.bat`: Python is inside, nothing to install. ·
+Unzip it anywhere and double-click `Artbench.bat` (on a Mac `Artbench.command`; the first time right-click it, Open,
+then Open): Python is inside, nothing to install. ·
 [artbench.malik3d.page](https://artbench.malik3d.page/) · [all releases](../../releases)
 
 > The green **Code → Download ZIP** button gives the source code, which needs Python 3.11+. To use Artbench, take the
@@ -96,6 +97,10 @@ Claude Code in one click and gives the lines for Gemini CLI and Codex.
 **Windows, ready to run.** [Download the newest build](https://github.com/Zeatrex01/Artbench/releases/latest/download/Artbench-windows-x64.zip) (or a given version from
 [Releases](../../releases), or the [download page](https://artbench.malik3d.page/)), unzip it anywhere (not inside a game project) and double-click `Artbench.bat`. Python is
 inside; there is nothing to install. The `README.txt` in the folder covers the rest.
+
+**macOS, ready to run.** The Apple silicon (M1 and later) or Intel download above: unzip it and double-click
+`Artbench.command`. Python is inside. The first time, macOS calls it a file from an unidentified developer:
+right-click it, choose Open, then Open again.
 
 **macOS, from source.** Install Python 3.11 or newer ([python.org](https://www.python.org/downloads/) or
 `brew install python`), download the source ([zip](../../archive/refs/heads/main.zip) or `git clone`) and double-click

@@ -622,6 +622,12 @@ in `/Applications`, `~/Applications` and Steam's Mac folder. The folder dialog i
 (`osascript`): Tk may open a window only on the main thread there, and the server answers from threads. File names
 are compared by `files.name_key` (composed Unicode, lower case), since a Mac may store an accented name decomposed.
 `.github/workflows/mac.yml` runs the suite and starts the server on a macOS runner, by hand.
+The Mac download (`tools/build_portable.py --target mac-arm64 | mac-x64`, built on any system): python-build-standalone's
+relocatable CPython (install_only, the same version as Windows', pinned by release tag and SHA-256, downloaded once
+into dist/cache), trimmed of Tk, pip, tests, headers and manuals, with Artbench, the add-on, LICENSE/NOTICE, a Mac
+README.txt and `Artbench.command` / `CreateShortcut.command` (they clear macOS's download mark on their own folder,
+then run `./python/bin/python3.12`). The zip keeps each file's mode and links. The release and the public CI build
+each Mac zip on a Mac with that chip (macos-latest, macos-15-intel), start it and ask `/api/alive` before it counts.
 
 `tools/build_portable.py` (a build tool, outside the package) writes `dist/Artbench-portable-win64.zip`: one folder
 `Artbench/` with python.org's embeddable Python in `python/` (its `python3XX._pth` gets `..`, so `artbench`

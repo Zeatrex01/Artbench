@@ -1,6 +1,6 @@
 # Artbench
 
-### ⬇ [Artbench'i Windows için indir](https://github.com/Zeatrex01/Artbench/releases/latest/download/Artbench-windows-x64.zip)
+### ⬇ [Artbench'i Windows için indir](https://github.com/Zeatrex01/Artbench/releases/latest/download/Artbench-windows-x64.zip) · macOS: [Apple silicon](https://github.com/Zeatrex01/Artbench/releases/latest/download/Artbench-macos-arm64.zip) · [Intel](https://github.com/Zeatrex01/Artbench/releases/latest/download/Artbench-macos-x64.zip)
 
 Zip'i istediğin yere aç ve `Artbench.bat`'a çift tıkla: Python içinde, kurulacak bir şey yok. ·
 [artbench.malik3d.page](https://artbench.malik3d.page/) · [tüm sürümler](../../releases)
@@ -25,7 +25,9 @@ Masaüstünde durur, repolara girmez. Sadece Python 3 ister; Unity'ye, eklentiye
 ## Çalıştırmak
 Sayfa İngilizce açılır; sol alttaki **TR / EN** düğmesi dili değiştirir ve tarayıcı bunu hatırlar.
 
-**Mac:** Python 3.11+ kur (python.org ya da `brew install python`), kaynak kodu indir ve `Artbench.command`'a çift tıkla.
+**Mac hazır sürüm:** yukarıdaki Apple silicon (M1 ve sonrası) ya da Intel indirmesi; zip'i aç, `Artbench.command`'a
+çift tıkla, Python içinde. **Mac kaynak koddan:** Python 3.11+ kur (python.org ya da `brew install python`), kaynak kodu
+indir ve `Artbench.command`'a çift tıkla.
 İlk açılışta macOS "tanımlanamayan geliştirici" derse: sağ tık → Aç → Aç. Blender, Uygulamalar klasöründe bulunur.
 
 **Hazır sürüm (önerilen):** yukarıdaki indirme; zip'i aç, `Artbench.bat`'a çift tıkla, Artbench kendi penceresinde

@@ -239,11 +239,12 @@ def _pick_folder_osascript(title, initial, run):
 def pick_folder(title="Choose a folder", initial=None, windows=None, run=None, use_tk=None, platform=None):
     """Native folder dialog on the machine running the server (local tool). None when cancelled. Finder's on a Mac;
     tkinter when the Python has it; else PowerShell's dialog on Windows."""
-    if (sys.platform if platform is None else platform) == "darwin":
+    windows = (os.name == "nt") if windows is None else windows
+    if not windows and (sys.platform if platform is None else platform) == "darwin":
         return _pick_folder_osascript(title, initial, run or subprocess.run)
     use_tk = _tk() if use_tk is None else use_tk
     if not use_tk:
-        if (os.name == "nt") if windows is None else windows:
+        if windows:
             return _pick_folder_powershell(title, initial, run or subprocess.run)
         return None
     import tkinter

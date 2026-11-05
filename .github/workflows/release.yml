@@ -1,8 +1,9 @@
-# A version tag publishes the Windows download: push a tag named v<version> (the version in artbench/__init__.py, e.g.
-# v0.1.0) and this builds the portable folder on Windows, starts it with its own Python, asks it whether it answers,
-# and only then creates the GitHub Release with the zip and the Blender add-on attached. The zip goes up twice: with
-# its version, and as Artbench-windows-x64.zip, so .../releases/latest/download/Artbench-windows-x64.zip (the README's
-# and the page's lasting link) always fetches the newest. Not a pre-release: GitHub's "latest" skips those.
+# A version tag publishes the downloads: push a tag named v<version> (the version in artbench/__init__.py, e.g.
+# v0.1.0). Windows is built on Windows and each Mac build on a Mac with that chip (Apple silicon, Intel); each is
+# started with its own Python and asked whether it answers, and only when all answered is the GitHub Release created
+# with the zips and the Blender add-on. Each zip goes up twice: with its version, and under a name that never changes
+# (Artbench-windows-x64.zip, Artbench-macos-arm64.zip, Artbench-macos-x64.zip), so .../releases/latest/download/<name>
+# (the README's and the page's lasting links) always fetches the newest. Not a pre-release: GitHub's "latest" skips those.
 #   git tag v0.1.1 && git push origin v0.1.1
 name: release
 
@@ -45,12 +46,68 @@ jobs:
           }
           Stop-Process -Id $p.Id -Force
           if (-not $answer -or $answer.app -ne "artbench") { throw "the portable Artbench did not answer" }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: |
+            dist/Artbench-*-windows-x64.zip
+            dist/artbench_bridge.zip
+
+  mac:
+    strategy:
+      matrix:
+        include:
+          - arch: arm64
+            runner: macos-latest          # Apple silicon
+          - arch: x64
+            runner: macos-15-intel        # Intel
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build the portable folder
+        run: python tools/build_portable.py --target mac-${{ matrix.arch }}
+      - name: Start it with its own Python and ask it
+        run: |
+          unzip -q dist/Artbench-*-macos-${{ matrix.arch }}.zip -d "$RUNNER_TEMP/p"
+          cd "$RUNNER_TEMP/p/Artbench"
+          bash -n Artbench.command
+          ./python/bin/python3.12 -m artbench --no-browser --port 8799 &
+          pid=$!
+          ok=""
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:8799/api/alive | grep -q '"artbench"'; then ok=1; break; fi
+            sleep 1
+          done
+          kill $pid
+          [ -n "$ok" ] || { echo "the portable Artbench did not answer"; exit 1; }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mac-${{ matrix.arch }}
+          path: dist/Artbench-*-macos-${{ matrix.arch }}.zip
+
+  publish:
+    needs: [windows, mac]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
       - name: Publish the release
-        shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
-          $zip = (Get-ChildItem dist/Artbench-*-windows-x64.zip | Select-Object -First 1).FullName
-          $notes = "Windows: download $((Split-Path $zip -Leaf)), unzip it anywhere (not inside a game project) and double-click Artbench.bat. Python is inside; nothing to install. The Blender add-on is inside the folder too, and attached here on its own (Blender 4.2+: Edit > Preferences > Get Extensions > Install from Disk)."
-          Copy-Item $zip dist/Artbench-windows-x64.zip             # the same file under a name that never changes
-          gh release create "${{ github.ref_name }}" $zip dist/Artbench-windows-x64.zip dist/artbench_bridge.zip --title "Artbench ${{ github.ref_name }}" --notes $notes
+          cd dist
+          cp Artbench-*-windows-x64.zip Artbench-windows-x64.zip           # the same files under names that never change
+          cp Artbench-*-macos-arm64.zip Artbench-macos-arm64.zip
+          cp Artbench-*-macos-x64.zip Artbench-macos-x64.zip
+          notes="Windows: download Artbench-windows-x64.zip, unzip it anywhere (not inside a game project) and double-click Artbench.bat.
+          Mac: Artbench-macos-arm64.zip for Apple silicon (M1 and later), Artbench-macos-x64.zip for an Intel Mac; unzip it and double-click Artbench.command (the first time: right-click it, Open, then Open).
+          Python is inside each; nothing to install. The Blender add-on is inside the folder too, and attached here on its own (Blender 4.2+: Get Extensions > Install from Disk)."
+          gh release create "${{ github.ref_name }}" Artbench-*.zip artbench_bridge.zip --title "Artbench ${{ github.ref_name }}" --notes "$notes"
