@@ -27,6 +27,9 @@ PRIORITY_THUMB = 5
 PRIORITY_STATS = 8            # catalog statistics: after the previews someone is looking at
 IDLE_SECONDS = 30            # the worker thread exits after this long without a job
 JOB_TIMEOUT = 120
+PREVIEW_CACHE_LIMIT = 512 << 20   # bytes of rendered previews kept; the least recently used go first (rebuilt on demand)
+TRIMMED_KINDS = ("thumbs",)       # never "meta": a change's before/after needs the old content's measurement
+USE_MARK_SECONDS = 86400          # a served cache file is marked as used at most once a day
 MAX_JOBS_PER_RUNNER = 200    # a kept-open Blender is restarted after this many jobs, so memory never piles up
 BACKGROUND_ARGS = ["-b", "--factory-startup"]     # no window; none of the person's add-ons or preferences
 # The kept-open Blender: one JSON job per line on stdin, each run as Blender runs a script (`-- src out args`), each
@@ -88,6 +91,7 @@ def request(cfg, script, src, out, args=(), priority=PRIORITY_THUMB):
     if not src or not os.path.isfile(src):
         return "none"
     if os.path.exists(out):
+        _mark_used(out)
         return "ready"
     with _lock:
         if out in _failed:
@@ -99,6 +103,56 @@ def request(cfg, script, src, out, args=(), priority=PRIORITY_THUMB):
             _queue.put((priority, -next(_seq), cfg, script, src, out, tuple(args)))     # newest first
             _start()
     return "pending"
+
+
+def _mark_used(path):
+    """Its modification time says when it was last served (a day's precision), for trim_cache."""
+    try:
+        now = time.time()
+        if now - os.path.getmtime(path) > USE_MARK_SECONDS:
+            os.utime(path, (now, now))
+    except OSError:
+        pass
+
+
+def trim_cache(limit=PREVIEW_CACHE_LIMIT):
+    """Removes the least recently used rendered previews until they take at most `limit` bytes. Returns how many."""
+    found = []
+    for kind in TRIMMED_KINDS:
+        folder = os.path.join(CACHE_DIR, kind)
+        for name in os.listdir(folder) if os.path.isdir(folder) else []:
+            path = os.path.join(folder, name)
+            try:
+                st = os.stat(path)
+            except OSError:
+                continue
+            found.append((st.st_mtime, st.st_size, path))
+    total, removed = sum(f[1] for f in found), 0
+    for _, size, path in sorted(found):
+        if total <= limit:
+            break
+        try:
+            os.remove(path)
+            total -= size
+            removed += 1
+        except OSError:
+            pass
+    return removed
+
+
+_running = 0                      # jobs a worker is running now
+
+
+def wait_idle(timeout=60.0):
+    """Waits until no job is running (tests: a job must not write into a folder its test already removed).
+    True when idle."""
+    end = time.time() + timeout
+    while time.time() < end:
+        with _lock:
+            if not _running:
+                return True
+        time.sleep(0.02)
+    return False
 
 
 def is_pending(out):
@@ -282,24 +336,32 @@ def _start():
 
 
 def _run(idle=IDLE_SECONDS):
-    global _worker
+    global _worker, _running
     while True:
+        q = _queue
         try:
-            _priority, _n, cfg, script, src, out, args = _queue.get(timeout=idle)
+            _priority, _n, cfg, script, src, out, args = q.get(timeout=idle)
         except queue.Empty:
             with _lock:                       # request() queues under the same lock: no job can slip in unseen
-                if _queue.empty():
-                    if _worker is threading.current_thread():
-                        _worker = None        # the next request starts a fresh worker
-                        _close_runners()      # an idle tool keeps no Blender running
-                    return
+                done = _queue.empty()
+                if done and _worker is threading.current_thread():
+                    _worker = None            # the next request starts a fresh worker
+                    _close_runners()          # an idle tool keeps no Blender running
+            if done:
+                trim_cache()                  # idle: keep the rendered previews within their limit
+                return
             continue
+        with _lock:
+            if q is not _queue:               # reset() came between taking it and starting it: a dropped job
+                continue
+            _running += 1
         try:
             exe = blender(cfg)
             if exe and not os.path.exists(out):                   # run_now may have produced it meanwhile
                 _run_job(exe, script, src, out, args)
         finally:
             with _lock:
+                _running -= 1
                 _pending.discard(out)
                 if not os.path.exists(out):
                     _failed.add(out)

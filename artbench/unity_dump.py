@@ -41,12 +41,35 @@ MAX_REF_FILE = 64 << 20          # bytes; a text asset larger than this is skipp
 
 
 class _Cache(dict):
-    """The file cache; `dirty` once an entry was added or replaced, so an unchanged project writes nothing."""
+    """The file cache; `dirty` once an entry was added, replaced or dropped, so an unchanged project writes nothing.
+    It notes every key a scan looks up, so prune() can drop what the scan no longer found."""
     dirty = False
+
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.seen = set()
+
+    def get(self, key, default=None):
+        self.seen.add(key)
+        return super().get(key, default)
 
     def __setitem__(self, key, value):
         self.dirty = True
+        self.seen.add(key)
         super().__setitem__(key, value)
+
+    def prune(self, root):
+        """Drops the entries under `root` this scan did not look at (deleted, renamed, now ignored) and the entries
+        of any folder that no longer exists (a removed project, a deleted folder): the cache never outgrows what is
+        on disk."""
+        prefix = os.path.join(root, "").lower()
+        exists = {}
+        drop = [k for k in self if (k.startswith(prefix) and k not in self.seen)
+                or (not k.startswith(prefix) and not exists.setdefault(os.path.dirname(k), os.path.isdir(os.path.dirname(k))))]
+        for k in drop:
+            del self[k]
+        if drop:
+            self.dirty = True
 
 
 def _load_cache():
@@ -223,6 +246,7 @@ def build(assets_root, ignore=DEFAULT_IGNORE, log=print, progress=None):
     for g in refs:
         refs[g] = sorted(set(refs[g]))
 
+    cache.prune(assets_root)
     if cache.dirty:
         store._write_json(CACHE_PATH, cache, compact=True)  # atomic: another process may read it meanwhile
     progress("settings", 0, 1, "ProjectSettings")

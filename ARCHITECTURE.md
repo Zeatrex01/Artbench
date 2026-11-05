@@ -671,6 +671,15 @@ characters (`marks.tag_name`); an asset with no star, flag or tag left has no en
 the person's to fill): one folder per model (Crate, Crate_2), its textures from `catalog.textures_of`, .meta left
 behind, a file already there kept, a folder inside the game project or the art folder refused, one EXPORT line.
 
+**Caches stay the size of what exists.** The Unity file cache (`unity_dump.CACHE_PATH`, shared by all projects)
+drops, at every scan, the entries under the scanned Assets folder the scan did not look at (deleted, renamed, now
+ignored) and the entries of any folder that no longer exists. The hash cache (`files.HASH_CACHE_PATH`) drops the
+paths that no longer exist at the first save of a run. Rendered previews (`.cache/thumbs`) are trimmed to
+`blender_jobs.PREVIEW_CACHE_LIMIT` (512 MB) when the Blender worker goes idle, the least recently used first (a
+served preview's mtime notes its use, at most once a day); they are rebuilt on demand. Model measurements
+(`.cache/meta`) are never trimmed: a change's before/after needs the old content's. A project on an unplugged drive
+loses its cache entries and is read in full on its next scan; nothing else is lost.
+
 **Archive** (`actions.archive_plan` / `archive` / `archived` / `restore`; the page's and the command line's,
 `PAGE_ONLY`: moving files out of the game project is the person's click, never an AI's). An engine asset goes only
 when nothing uses it (no `used_by`, project settings included) and it is not a scene in the build; one loaded by name

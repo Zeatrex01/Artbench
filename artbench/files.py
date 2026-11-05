@@ -61,12 +61,20 @@ def sha_bytes(data):
     return hashlib.sha256(data).hexdigest()
 
 
+_pruned = False
+
+
 def save_cache():
     """Writes the hash cache atomically from a copy (other threads, thumbnails and snapshots, may hash meanwhile),
-    and only when something was hashed since the last save: a quiet look writes nothing."""
-    global _hash_cache_dirty
+    and only when something was hashed since the last save: a quiet look writes nothing. The first save of a run
+    also drops the paths that no longer exist, so the cache stays the size of what is on disk."""
+    global _hash_cache_dirty, _pruned
     if _hash_cache is not None and _hash_cache_dirty:
         _hash_cache_dirty = False
+        if not _pruned:
+            _pruned = True
+            for path in [p for p in list(_hash_cache) if not os.path.exists(p)]:
+                _hash_cache.pop(path, None)
         store._write_json(HASH_CACHE_PATH, dict(_hash_cache), compact=True)
 
 
