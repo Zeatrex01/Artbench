@@ -1,6 +1,8 @@
 """Operations on the person's own records: tasks, notes, moves between states, history, the change feed."""
-from .. import actions, changes, marks, store, tasks
-from .common import _cfg, _desktop_item
+import os
+
+from .. import actions, changes, marks, scan, store, tasks
+from .common import _cfg, _desktop_item, _page
 
 
 def op_tasks(args):
@@ -81,3 +83,20 @@ def op_changes(args):
 def op_meta(args):
     actions.set_meta(_cfg(args["project"]), args["id"], **{k: args[k] for k in actions.META_FIELDS if k in args})
     return {"ok": True}
+
+
+def op_asset_history(args):
+    """One asset's history lines and file changes, newest first, paged (20 unless limit says otherwise)."""
+    cfg, wanted = _cfg(args["project"]), args["id"]
+    keys, tails = {wanted}, set()
+    if wanted.startswith("engine:"):
+        tails.add(wanted[len("engine:"):])
+    else:                                                    # an art-folder item: its file, and its engine copy
+        keys.add("art:" + wanted)
+        tails.add(wanted)
+        item = next((i for i in scan.scan(cfg).get("items") or [] if i["id"] == wanted), None)
+        if item and item.get("engine_path") and cfg.get("engine_root"):
+            rel = os.path.relpath(item["engine_path"], cfg["engine_root"]).replace("\\", "/")
+            keys.add("engine:" + rel)
+    page, total = _page(changes.timeline(cfg, keys, tails), {**args, "limit": args.get("limit") or 20})
+    return {"total": total, "entries": page}

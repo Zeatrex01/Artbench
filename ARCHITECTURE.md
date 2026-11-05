@@ -37,7 +37,7 @@ deploy.py           send entry point: art -> engine (fingerprint warnings, .meta
 package.py          asset package transfers: per-file send/pull plan (model + engine-ready textures), engine layout
                     targets, team-safe default selection, textures first / model last, per-file outcome      writes history
 sync.py             two-way sync: status from the recorded base, pull (engine -> art), force rule, archive paths  writes history
-changes.py          change feed: snapshot diff of tracked files on both sides -> changes.log
+changes.py          change feed: snapshot diff of tracked files on both sides -> changes.log; one asset's timeline
 tasks.py            task list CRUD                                                   writes history
 marks.py            favourite stars, "revision coming" flags with a note and tags, per asset id (marks.json)  writes history
 export.py           game-project models with their textures into a folder of one's own, one folder per model,
@@ -471,7 +471,7 @@ blend; an engine_path must be an existing file inside the engine root with the i
 as same-name copies are found), given as an
 absolute path or under `Assets/`; the scan honours a note only when it passes the same rule (a hand-edited one
 included), so an item can never be pointed at another file that a send would then overwrite), move, history, changes, refresh, send_plan, send, pull_plan, pull, metadata_snapshot, metadata_diff, preview,
-scene_inventory, engine_status, engine_report, doctor, checks (what standards | duplicates, rule?, offset, limit), checks_settings (set?), catalog (kind, usage, folder, search, detail, offset, limit 25 ≤
+scene_inventory, engine_status, engine_report, doctor, asset_history (id, offset, limit 20: `{total, entries: [{time, source: history | change, what, detail}]}`, newest first), checks (what standards | duplicates, rule?, offset, limit), checks_settings (set?), catalog (kind, usage, folder, search, detail, offset, limit 25 ≤
 500 → `{total, offset, assets}`: brief rows, `detail: "full"` for the whole entries), tasks (status: todo, doing, done or
 open; assets; limit 50 → rows without their empty fields), blender_status (no project: `{open, file, blender, pid, seconds_since_report, project, asset, models}`, project = the registered project whose art folder or engine folder holds the file, asset = the file's id there (its path under the art folder, or `engine:<path>` inside the game project), models = the desktop models made from it (bound to this .blend by name or by binding); `blender_link.file_info`, reused for 20 s), blender_report (the add-on's door, HTTP only like engine_report: {file, blender, pid, closing?}), blender_notes_send (the add-on's door too: {file, notes}; a file in no registered project is `bad_request` "this file is in no Artbench project"; → `{project, asset, count}`), blender_notes (project → the entries above, newest send first; read only, shown in the Tasks view's From Blender section), open_in_blender (project, id: a model opens in Blender's window, detached; a .blend as it is, FBX/OBJ/glTF imported into an empty scene by `blender_link.IMPORT_EXPR`; an art-folder model with a .blend source opens that .blend; `unavailable` without Blender, `bad_request` for a kind that is not a model).
 
@@ -669,6 +669,18 @@ characters (`marks.tag_name`); an asset with no star, flag or tag left has no en
 (ids `engine:...`, dest) are the page's and the command line's (`PAGE_ONLY`: no MCP tool, an AI has no folder of
 the person's to fill): one folder per model (Crate, Crate_2), its textures from `catalog.textures_of`, .meta left
 behind, a file already there kept, a folder inside the game project or the art folder refused, one EXPORT line.
+
+**Catalog search and CSV** (the page; an AI has the catalog op's own filters). Plain words match the name or
+path; `kind:`, `usage:` (unused = unreferenced), `tag:`, `folder:`, `name:`, `is:` (fav, revision, unused, tagged,
+build), `px:`, `tris:` and `size:` (>, <, >=, <=, =, with k, kb, m, mb, gb) narrow; a leading `-` turns a part
+around; an unknown key is a plain word (`catalog.js` `queryTest`). CSV downloads the list as filtered and sorted:
+id, name, kind, folder, path, usage, used_by, size_bytes, width, height, tris, favorite, revision, note, tags; UTF-8
+with a BOM, a cell starting with = + - @ gets an apostrophe so a spreadsheet does not run it.
+
+**One asset's history** (`changes.timeline(cfg, keys, paths)`): the history lines with a field that is one of the
+asset's ids or a path ending in its path (so MARK, TASK, META, MOVE, BRING IN, SEND lines all count), and the change
+feed's entries for its file (art and engine side; the baseline is left out), newest first. The `asset_history` op
+gives it paged; the card shows it under History, collapsed to one line until opened.
 
 **Checks** (advisory, nothing is changed). `checks` (what=standards, the default) answers `{total, counts per rule,
 issues: [{id, rule, detail, level}]}`, paged, `rule` narrowing; what=duplicates answers `{total, wasted, groups:

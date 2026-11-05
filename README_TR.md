@@ -39,6 +39,14 @@ solundaki kutuyla birkaç varlığı seç (Shift: aralık); alttaki çubuktan he
 önce plan gösterilir, orada olan dosyanın üstüne yazılmaz. Unity'deki bir modeli art klasörüne alırken de dokularını
 getirmek için kutu işaretli gelir.
 
+Katalog araması anahtar kelimeleri anlar: `kind:texture`, `usage:unused`, `tag:kahraman`, `folder:Props`, `is:fav`,
+`is:revision`, `px:>2048`, `tris:>10k`, `size:>2mb`; başına `-` koyunca tersine çevirir (`kind:model -barrel`).
+Araç çubuğunun sağındaki **CSV** süzülmüş listeyi tablo programı için indirir (ad, tür, klasör, kullanım, boyut,
+çözünürlük, üçgen, favori, revize notu, etiketler).
+
+Her kartın altında **Bu varlığın geçmişi** var: açınca o varlıkla ilgili her kayıt (favori, revize, etiket, görev,
+not, taşıma, gönderme) ve dosyasının değişiklikleri en yenisi üstte listelenir. AI için `asset_history`.
+
 **Etiketler** senin kelimelerin (kahraman, bölüm 2, dış kaynak): kartta alana yazıp Enter'a bas, çarpıyla kaldır; seçili
 varlıkların hepsine alttaki çubuktaki **Etiketle…** ile ekle. Etiketler küçük harfe çevrilir. Sol menüdeki Etiketler
 kataloğu, İşaretli sekmesindeki etiketler o listeyi süzer; AI da `mark` (tags_add, tags_remove) ve `marks` (tag) ile

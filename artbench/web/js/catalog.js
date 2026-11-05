@@ -6,6 +6,7 @@ import { t } from './i18n.js';
 import { $, $$, esc, fmtCount, fmtSize, prefs, emptyState, callout, toast } from './ui.js';
 import { S, KIND, actions, enginePathAbs } from './state.js';
 import { groupHead } from './library.js';
+import { assetHistorySection } from './views.js';
 import { thumbHTML } from './thumbs.js';
 import { markBadges, markOf, markSection, pickBox, allTags } from './marks.js';
 
@@ -30,9 +31,61 @@ export function pcounts() {
 }
 
 export function filteredAssets() {
-  const f = S.catFilters, words = (S.search || '').toLowerCase().split(/\s+/).filter(Boolean);
+  const f = S.catFilters, match = queryTest(S.search);
   return catalogAssets().filter(a => (!f.kind || a.kind === f.kind) && (!f.usage || a.usage === f.usage) && (!f.mark || markOf(a.id)[f.mark]) && (!f.tag || (markOf(a.id).tags || []).includes(f.tag))
-    && (!f.folder || inFolder(a, f.folder)) && words.every(w => (a.name + ' ' + a.path).toLowerCase().includes(w)));
+    && (!f.folder || inFolder(a, f.folder)) && match(a));
+}
+
+/* The catalog's search: plain words match the name or path; key:value narrows (kind:texture, usage:unused, tag:hero,
+   folder:Props, is:fav | revision | unused | tagged, px:>2048, tris:>10k, size:>2mb); a leading - turns any part
+   around; an unknown key is a plain word. */
+const USAGE_WORD = { unused: 'unreferenced', unreferenced: 'unreferenced', used: 'used', byname: 'by_name', by_name: 'by_name', name: 'by_name', unknown: 'unknown' };
+const SCALE = { k: 1000, kb: 1024, m: 1e6, mb: 1048576, gb: 1073741824 };
+function numberTest(v) {
+  const m = /^(>=|<=|>|<|=)?(\d+(?:\.\d+)?)(k|kb|m|mb|gb)?$/.exec(v);
+  if (!m) return null;
+  const n = +m[2] * (SCALE[m[3]] || 1), op = m[1] || '=';
+  return x => x != null && (op === '>' ? x > n : op === '<' ? x < n : op === '>=' ? x >= n : op === '<=' ? x <= n : x === n);
+}
+const TESTS = {
+  kind: v => a => a.kind === v || a.kind + 's' === v || (KIND[a.kind]?.label || '').toLowerCase().startsWith(v),
+  usage: v => a => a.usage === (USAGE_WORD[v] || v),
+  tag: v => a => (markOf(a.id).tags || []).includes(v),
+  folder: v => a => (a.folder || '').toLowerCase().includes(v),
+  name: v => a => a.name.toLowerCase().includes(v),
+  is: v => ({ fav: a => !!markOf(a.id).favorite, favorite: a => !!markOf(a.id).favorite, star: a => !!markOf(a.id).favorite,
+    revision: a => !!markOf(a.id).revision, unused: a => a.usage === 'unreferenced', tagged: a => !!(markOf(a.id).tags || []).length,
+    build: a => a.in_build === true })[v] || null,
+  px: v => { const n = numberTest(v); return n && (a => n(a.image ? Math.max(a.image.width || 0, a.image.height || 0) : null)); },
+  tris: v => { const n = numberTest(v); return n && (a => n(a.stats?.tris)); },
+  size: v => { const n = numberTest(v); return n && (a => n(a.size)); },
+};
+export function queryTest(q) {
+  const parts = (q || '').toLowerCase().match(/-?(?:\w+:)?"[^"]*"|\S+/g) || [];
+  const tests = parts.map(raw => {
+    const not = raw.startsWith('-') && raw.length > 1, p = (not ? raw.slice(1) : raw).replace(/"/g, '');
+    const m = /^(\w+):(.+)$/.exec(p), test = m && TESTS[m[1]] ? TESTS[m[1]](m[2].trim()) : null;
+    const one = test || (a => (a.name + ' ' + a.path).toLowerCase().includes(p));
+    return not ? a => !one(a) : one;
+  });
+  return a => tests.every(test => test(a));
+}
+
+/** The filtered list as a CSV file (UTF-8 with a BOM, so spreadsheet apps read the accents); a cell that a
+ * spreadsheet would run as a formula starts with an apostrophe. */
+const CSV_COLUMNS = ['id', 'name', 'kind', 'folder', 'path', 'usage', 'used_by', 'size_bytes', 'width', 'height', 'tris', 'favorite', 'revision', 'note', 'tags'];
+export function csvOf(rows) {
+  const cell = v => { let s = v == null ? '' : String(v); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+  const line = a => { const m = markOf(a.id); return [a.id, a.name, a.kind, a.folder, a.path, a.usage, a.used_by_count ?? '', a.size ?? '', a.image?.width ?? '', a.image?.height ?? '',
+    a.stats?.tris ?? '', m.favorite ? 'yes' : '', m.revision ? 'yes' : '', m.revision?.note || '', (m.tags || []).join('; ')].map(cell).join(','); };
+  return '\ufeff' + [CSV_COLUMNS.join(','), ...rows.map(line)].join('\r\n') + '\r\n';
+}
+function downloadCsv() {
+  const rows = sorted(filteredAssets()), url = URL.createObjectURL(new Blob([csvOf(rows)], { type: 'text/csv;charset=utf-8' }));
+  const a = Object.assign(document.createElement('a'), { href: url, download: `${S.project || 'artbench'}-catalog.csv` });
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast(t('cat.csvDone', { n: rows.length }), 'ok');
 }
 
 export const kindIcon = (kind, cls = '') => `<span class="kicon ${cls}" style="--c:${KIND[kind]?.color || KIND.other.color}">${icon(KIND[kind]?.icon || 'box')}</span>`;
@@ -139,7 +192,8 @@ function toolbar() {
       <button class="${S.catGroup !== 'folder' ? 'on' : ''}" data-cgroup="kind">${icon('layers')}${t('cat.byKind')}</button>
       <button class="${S.catGroup === 'folder' ? 'on' : ''}" data-cgroup="folder">${icon('folder')}${t('cat.byFolder')}</button></div>
     <select id="catFolder" title="${t('cat.allFolders')}"><option value="">${t('cat.allFolders')}</option>${folders.map(x => `<option value="${esc(x)}" ${x === f ? 'selected' : ''}>${esc(x)} (${n(x)})</option>`).join('')}</select>
-    <select id="catSort" title="${t('cat.sortTitle')}">${SORTS.map(k => `<option value="${k}" ${S.catSort === k ? 'selected' : ''}>${t('cat.sort.' + k)}</option>`).join('')}</select></div>`;
+    <select id="catSort" title="${t('cat.sortTitle')}">${SORTS.map(k => `<option value="${k}" ${S.catSort === k ? 'selected' : ''}>${t('cat.sort.' + k)}</option>`).join('')}</select>
+    <div class="grow"></div><button class="btn sm" id="catCsv" title="${t('cat.csvTitle')}">${icon('list')}${t('cat.csv')}</button></div>`;
 }
 
 export function viewUnused() {
@@ -186,6 +240,7 @@ export function bindCatalog(el) {
   $$('[data-cshow]', el).forEach(b => b.onclick = ev => { ev.stopPropagation(); setHidden(b.dataset.cshow, false); });
   $$('[data-cgroup]', el).forEach(b => b.onclick = () => { S.catGroup = b.dataset.cgroup; prefs.set('catGroup', S.catGroup); actions.render(); });
   const folder = $('#catFolder', el); if (folder) folder.onchange = () => { S.catFilters.folder = folder.value || null; actions.render(); };
+  const csv = $('#catCsv', el); if (csv) csv.onclick = downloadCsv;
 }
 
 function refs(rows, total, none, failed = false) {
@@ -228,7 +283,7 @@ export function assetCard(e, { pathRow, taskMini }) {
     ${isCatalog ? cardStats(e) : ''}
     <div class="chips">${e.usage ? `<span class="chip ${USAGE_CLS[e.usage] || 'dim'}">${t('usage.' + e.usage)}</span>` : ''}${e.in_build === true ? `<span class="chip accent nodot">${t('ins.inBuild')}</span>` : e.in_build === false ? `<span class="chip dim nodot">${t('ins.notInBuild')}</span>` : ''}</div>
     ${e.usage ? callout(USAGE_CLS[e.usage] === 'dim' ? 'info' : USAGE_CLS[e.usage], t('usage.explain.' + e.usage)) : ''}
-    ${markSection(e)}
+    ${markSection(e)}${assetHistorySection(e.id)}
     ${e.path ? pathRow(t('ins.unity'), e.path) : e.engine_path ? pathRow(t('ins.unity'), e.engine_path) : ''}
     <div class="sec"><span class="label">${t('ins.usedBy')} <span class="n">${usedByN}</span></span>${refs(usedBy, usedByN, t('ins.usedByNone'), failed)}</div>
     ${isCatalog ? `<div class="sec"><span class="label">${t('ins.uses')} <span class="n">${e.uses_count}</span></span>${refs(uses, e.uses_count, t('ins.usesNone'), failed)}</div>` : ''}

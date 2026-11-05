@@ -82,6 +82,10 @@ animator bad, data muted.
   (second in the menu) lists what waits for a revision with its note first, then the favourites, with All /
   Waiting for a revision / Favorites; the catalog's filters gain Favorites and Waiting for a revision. Bringing a
   Unity model into the art folder asks for the category and offers its textures, ticked.
+  Catalog search takes keys (the placeholder shows a few: kind:texture, px:>2048, is:fav, tag:); CSV sits at the
+  right end of the catalog's toolbar and downloads the list as it is filtered.
+  History: one line on every card (clock, History of this asset, its count once loaded, a chevron); opened, the
+  asset's history lines and file changes, newest first, each with its time, a verb chip and the detail in mono.
   Tags: small outlined mono chips after the star and the revision chip (two on a row, then +n); on the card, the
   tags with a cross each and a field (Enter adds, the project's other tags suggested); the pick bar's Tag… asks
   for one and adds it to every picked asset; the sidebar's Tags pills filter the catalog, and Marked has the

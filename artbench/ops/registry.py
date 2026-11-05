@@ -93,6 +93,8 @@ _DEFS += [
                         "tags_remove": {"type": "array", "items": {"type": "string"}}}, ["project", "ids"])},
     {"name": "marks", "description": "Marked assets, revision first; filter favorite|revision, tag narrows.",
      "params": _schema({**_P, "filter": {"type": "string", "enum": ["favorite", "revision"]}, "tag": {"type": "string"}, "limit": {"type": "integer", "default": 50}}, ["project"])},
+    {"name": "asset_history", "description": "One asset's history lines and file changes, newest first: [{time, source, what, detail}].",
+     "params": _schema({**_P, "id": {"type": "string"}, **_PAGE}, ["project", "id"])},
     {"name": "checks", "description": "Advisory. what=standards (default): issues and counts per rule (size, power of two, Read/Write, compression, naming, tris); rule narrows. what=duplicates: copies of one file.",
      "params": _schema({**_P, "what": {"type": "string", "enum": ["standards", "duplicates"]}, "rule": {"type": "string"}, **_PAGE}, ["project"])},
     {"name": "checks_settings", "description": "The standards; set={texture_max, tris_max, naming, power_of_two, read_write, uncompressed, prefixes} changes them (0 turns a limit off).",

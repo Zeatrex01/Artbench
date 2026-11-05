@@ -2,7 +2,7 @@
 // the same chips as the library; bindViews wires reveal / open / jump / graph buttons.
 import { icon } from './icons.js';
 import { t } from './i18n.js';
-import { $, $$, esc, emptyState, callout, toast } from './ui.js';
+import { $, $$, esc, emptyState, callout, toast, fmtStamp } from './ui.js';
 import { api } from './api.js';
 import { thumbHTML } from './thumbs.js';
 import { S, KIND, actions, matches, enginePathAbs, isProject } from './state.js';
@@ -166,5 +166,35 @@ export function bindViews(el) {
     seen.disabled = true;
     try { await api.post('/api/changes/seen', { project: S.project }); await actions.refresh(); actions.render(); toast(t('changes.marked'), 'ok'); }
     catch (e) { toast(e.message); seen.disabled = false; }
+  };
+}
+
+/** The card's History: collapsed to one line; opened, one asset's history lines and file changes, newest first
+ * (GET /api/v1/asset_history), loaded each time it opens. */
+const ahist = { open: false, id: null, data: null, error: null };
+export function assetHistorySection(id) {
+  if (ahist.id !== id) Object.assign(ahist, { id, data: null, error: null });
+  const d = ahist.data, rows = d ? d.entries.map(e => {
+    const [cls, label] = e.source === 'change' ? (CHANGE[e.what] ? [CHANGE[e.what][0], t(CHANGE[e.what][1])] : ['dim', e.what])
+      : [VERB[e.what.split(' ')[0]] || 'dim', verbLabel(e.what)];
+    return `<div class="ahrow"><span class="time">${esc(fmtStamp(e.time))}</span><span class="chip ${cls} nodot">${esc(label)}</span><span class="mono">${esc(e.detail)}</span></div>`;
+  }).join('') : '';
+  const body = !ahist.open ? '' : ahist.error ? `<div class="muted">${esc(ahist.error)}</div>`
+    : !d ? `<div class="muted">${t('app.scanning')}</div>`
+    : d.total ? rows + (d.total > d.entries.length ? `<div class="muted ahmore">${t('ins.historyMore', { n: d.total - d.entries.length })}</div>` : '')
+    : `<div class="muted">${t('ins.historyNone')}</div>`;
+  return `<div class="sec ahist ${ahist.open ? 'open' : ''}"><button class="ahist-head" id="ahToggle">${icon('clock')}<span>${t('ins.history')}</span>
+    ${d ? `<span class="n">${d.total}</span>` : ''}<span class="grow"></span>${icon('chevron')}</button>${body}</div>`;
+}
+export function bindAssetHistory(el, id) {
+  const b = $('#ahToggle', el);
+  if (!b) return;
+  b.onclick = async () => {
+    ahist.open = !ahist.open;
+    actions.renderInspector();
+    if (!ahist.open) return;
+    try { ahist.data = (await api.get('/api/v1/asset_history', { project: S.project, id, limit: 30 })).result; ahist.error = null; }
+    catch (e) { ahist.error = e.message; }
+    if (ahist.id === id) actions.renderInspector();
   };
 }

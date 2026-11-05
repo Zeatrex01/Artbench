@@ -202,3 +202,27 @@ def since_seen(cfg):
 def _entry(stamp, change, key):
     side, rel = key.split(":", 1)
     return {"time": stamp, "change": change, "side": side, "path": rel}
+
+
+def _names(field, keys, tails):
+    """Whether one history field names the asset: one of its ids, or a path ending in one of its paths."""
+    field = field.replace("\\", "/")
+    return field in keys or any(field == t or field.endswith("/" + t) for t in tails)
+
+
+def timeline(cfg, keys, tails):
+    """One asset's own history, newest first: the history lines with a field naming it (`keys` are its ids and change
+    keys, `tails` its paths) and the change feed's entries for its file. [{time, source: history | change, what,
+    detail}]."""
+    out = []
+    for line in store.history(cfg, last=10 ** 6):
+        parts = line.split("\t")
+        if len(parts) > 2 and any(_names(f, keys, tails) for f in parts[2:]):
+            out.append({"time": parts[0], "source": "history", "what": parts[1], "detail": " · ".join(parts[2:])})
+    for e in _parse(_lines(cfg)):
+        if e["change"] == "BASELINE":
+            continue
+        if f"{e['side']}:{e['path']}" in keys or any(_names(p, set(), tails) for p in (e["path"], e.get("from") or "") if p):
+            out.append({"time": e["time"], "source": "change", "what": e["change"],
+                        "detail": e["path"] + (f" (from {e['from']})" if e.get("from") else "")})
+    return sorted(out, key=lambda e: e["time"], reverse=True)
