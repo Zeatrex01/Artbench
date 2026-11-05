@@ -22,6 +22,8 @@ def _catalog_summary(entry, marked=None):
         row["fav"] = True
     if m.get("revision"):
         row["revision"] = True
+    if m.get("tags"):
+        row["tags"] = m["tags"]
     return row
 
 
@@ -222,6 +224,9 @@ def op_catalog(args):
     marked = marks.load(cfg)
     if args.get("mark"):                                     # only the favourites, or only what waits for a revision
         cat = {**cat, "assets": [a for a in cat["assets"] if (marked.get(a["id"]) or {}).get(args["mark"])]}
+    if args.get("tag"):                                      # only the assets carrying this tag
+        tag = marks.tag_name(args["tag"])
+        cat = {**cat, "assets": [a for a in cat["assets"] if tag in ((marked.get(a["id"]) or {}).get("tags") or [])]}
     page = catalog.query(cat, kind=args.get("kind"), usage=args.get("usage"), folder=args.get("folder"),
                          search=args.get("search"), offset=args.get("offset") or 0, limit=args.get("limit") or 25)
     if args.get("detail") != "full":                         # brief rows unless the whole entry is asked for

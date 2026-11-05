@@ -29,20 +29,26 @@ def op_task_update(args):
 
 def op_mark(args):
     return marks.set_marks(_cfg(args["project"]), args["ids"], favorite=args.get("favorite"),
-                           revision=args.get("revision"), note=args.get("note"))
+                           revision=args.get("revision"), note=args.get("note"),
+                           add_tags=args.get("tags_add"), remove_tags=args.get("tags_remove"))
 
 
 def op_marks(args):
-    """The marked assets, those waiting for a revision first."""
+    """The marked assets, those waiting for a revision first; tag narrows to the assets carrying it."""
     rows = []
+    tag = marks.tag_name(args["tag"]) if args.get("tag") else None
     for asset, e in marks.load(_cfg(args["project"])).items():
         if args.get("filter") and not e.get(args["filter"]):
+            continue
+        if tag and tag not in (e.get("tags") or []):
             continue
         row = {"id": asset}
         if e.get("favorite"):
             row["favorite"] = True
         if e.get("revision"):
             row.update(revision=True, note=e["revision"]["note"])
+        if e.get("tags"):
+            row["tags"] = e["tags"]
         rows.append(row)
     rows.sort(key=lambda r: (not r.get("revision"), r["id"].lower()))
     return rows[:int(args.get("limit") or 50)]

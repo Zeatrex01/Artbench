@@ -87,11 +87,12 @@ _DEFS = [
 
 
 _DEFS += [
-    {"name": "mark", "description": "Mark assets: favorite true/false; revision true/false with an optional note (a note alone sets it).",
+    {"name": "mark", "description": "Mark assets: favorite, revision (true/false), note (sets revision), tags_add, tags_remove.",
      "params": _schema({**_P, "ids": {"type": "array", "items": {"type": "string"}}, "favorite": {"type": "boolean"},
-                        "revision": {"type": "boolean"}, "note": {"type": "string"}}, ["project", "ids"])},
-    {"name": "marks", "description": "Marked assets, revision first: [{id, favorite?, revision?, note?}]. filter: favorite or revision.",
-     "params": _schema({**_P, "filter": {"type": "string", "enum": ["favorite", "revision"]}, "limit": {"type": "integer", "default": 50}}, ["project"])},
+                        "revision": {"type": "boolean"}, "note": {"type": "string"}, "tags_add": {"type": "array", "items": {"type": "string"}},
+                        "tags_remove": {"type": "array", "items": {"type": "string"}}}, ["project", "ids"])},
+    {"name": "marks", "description": "Marked assets, revision first; filter favorite|revision, tag narrows.",
+     "params": _schema({**_P, "filter": {"type": "string", "enum": ["favorite", "revision"]}, "tag": {"type": "string"}, "limit": {"type": "integer", "default": 50}}, ["project"])},
     {"name": "checks", "description": "Advisory. what=standards (default): issues and counts per rule (size, power of two, Read/Write, compression, naming, tris); rule narrows. what=duplicates: copies of one file.",
      "params": _schema({**_P, "what": {"type": "string", "enum": ["standards", "duplicates"]}, "rule": {"type": "string"}, **_PAGE}, ["project"])},
     {"name": "checks_settings", "description": "The standards; set={texture_max, tris_max, naming, power_of_two, read_write, uncompressed, prefixes} changes them (0 turns a limit off).",
@@ -107,7 +108,7 @@ _DEFS += [
     {"name": "catalog",
      "description": "The asset catalog, filtered (kind, usage, folder: an Assets/ prefix, search, mark) and paged (offset, limit 25, at most 500; total). Brief rows {id, kind, usage, used_by_count}; detail=full adds path, size, used_by, uses. usage: used, unreferenced, by_name (loaded from code), unknown (not Force Text).",
      "params": _schema({**_P, "kind": {"type": "string"}, "usage": {"type": "string"}, "folder": {"type": "string"},
-                        "search": {"type": "string"}, "mark": {"type": "string", "enum": ["favorite", "revision"]},
+                        "search": {"type": "string"}, "mark": {"type": "string", "enum": ["favorite", "revision"]}, "tag": {"type": "string"},
                         "detail": {"type": "string", "enum": ["brief", "full"]},
                         "offset": {"type": "integer", "default": 0}, "limit": {"type": "integer", "default": 25}}, ["project"])},
 ]

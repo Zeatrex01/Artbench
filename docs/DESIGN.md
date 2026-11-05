@@ -34,7 +34,7 @@ js/projects.js      the projects hub: connect (Game project only, default, or ga
 js/catalog.js       project mode: art catalog by kind, unused view, asset card, kind navigation, previews and
                     model statistics in rows and cards, sort, hidden folders, Open in Blender
 js/scenes.js        scenes and what each one uses: the list (filterable) beside one scene's assets by kind
-js/marks.js         stars and revision flags, picking several assets, the pick bar, the Marked view, export to a folder
+js/marks.js         stars, revision flags and tags, picking several assets, the pick bar, the Marked view, export to a folder
 js/checks.js        the Checks view: standards by rule, duplicates with what uses each copy, the rules card
 js/i18n.js          every user-visible string, English and Turkish; t(key, vars)
 ```
@@ -82,6 +82,10 @@ animator bad, data muted.
   (second in the menu) lists what waits for a revision with its note first, then the favourites, with All /
   Waiting for a revision / Favorites; the catalog's filters gain Favorites and Waiting for a revision. Bringing a
   Unity model into the art folder asks for the category and offers its textures, ticked.
+  Tags: small outlined mono chips after the star and the revision chip (two on a row, then +n); on the card, the
+  tags with a cross each and a field (Enter adds, the project's other tags suggested); the pick bar's Tag… asks
+  for one and adds it to every picked asset; the sidebar's Tags pills filter the catalog, and Marked has the
+  same pills beside its switch.
 - **Checks**: Standards / Duplicates as a segmented switch with counts, Rules beside it. Standards: one figure per
   rule (its count, a status dot for the rules that have issues, quiet at zero; a click narrows to that rule), then
   the issues grouped by rule, each row with the detail and a Worth fixing (warn) or Note (info) chip. Duplicates: two

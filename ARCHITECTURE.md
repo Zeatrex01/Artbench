@@ -39,7 +39,7 @@ package.py          asset package transfers: per-file send/pull plan (model + en
 sync.py             two-way sync: status from the recorded base, pull (engine -> art), force rule, archive paths  writes history
 changes.py          change feed: snapshot diff of tracked files on both sides -> changes.log
 tasks.py            task list CRUD                                                   writes history
-marks.py            favourite stars and "revision coming" flags with a note, per asset id (marks.json)   writes history
+marks.py            favourite stars, "revision coming" flags with a note and tags, per asset id (marks.json)  writes history
 export.py           game-project models with their textures into a folder of one's own, one folder per model,
                     plan then copy, nothing overwritten                                                writes history
 checks.py           advisory checks over the catalog: duplicates (same content in several places, by size then hash)
@@ -661,9 +661,11 @@ Next, in this order:
 2. A Blender MCP that works with or without Artbench: the scene, its changes, export templates per project.
 3. Godot (an adapter producing the dump shape, see Extension points).
 
-**Marks and export** (what an everyday asset tool has). `mark` op (ids, favorite?, revision?, note?) and
-`marks` list (filter favorite | revision, revision first); overview counts them, catalog filters by `mark` and its
-brief rows carry `fav` / `revision` only when set; the page state carries the map. `export_plan` / `export`
+**Marks and export** (what an everyday asset tool has). `mark` op (ids, favorite?, revision?, note?, tags_add?,
+tags_remove?) and `marks` list (filter favorite | revision, tag?, revision first); overview counts them (with
+`tags: {tag: n}`, most used first, only when any asset has one), catalog filters by `mark` and by `tag`, and its
+brief rows carry `fav` / `revision` / `tags` only when set. A tag has one form: lower case, single spaces, 1 to 40
+characters (`marks.tag_name`); an asset with no star, flag or tag left has no entry; the page state carries the map. `export_plan` / `export`
 (ids `engine:...`, dest) are the page's and the command line's (`PAGE_ONLY`: no MCP tool, an AI has no folder of
 the person's to fill): one folder per model (Crate, Crate_2), its textures from `catalog.textures_of`, .meta left
 behind, a file already there kept, a folder inside the game project or the art folder refused, one EXPORT line.

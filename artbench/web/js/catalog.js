@@ -7,7 +7,7 @@ import { $, $$, esc, fmtCount, fmtSize, prefs, emptyState, callout, toast } from
 import { S, KIND, actions, enginePathAbs } from './state.js';
 import { groupHead } from './library.js';
 import { thumbHTML } from './thumbs.js';
-import { markBadges, markOf, markSection, pickBox } from './marks.js';
+import { markBadges, markOf, markSection, pickBox, allTags } from './marks.js';
 
 export const KIND_ORDER = ['model', 'prefab', 'material', 'texture', 'scene', 'mesh', 'animator', 'clip', 'shader', 'audio', 'font', 'atlas'];
 export const USAGE_CLS = { used: 'ok', unreferenced: 'warn', by_name: 'info', unknown: 'dim' };
@@ -31,7 +31,7 @@ export function pcounts() {
 
 export function filteredAssets() {
   const f = S.catFilters, words = (S.search || '').toLowerCase().split(/\s+/).filter(Boolean);
-  return catalogAssets().filter(a => (!f.kind || a.kind === f.kind) && (!f.usage || a.usage === f.usage) && (!f.mark || markOf(a.id)[f.mark])
+  return catalogAssets().filter(a => (!f.kind || a.kind === f.kind) && (!f.usage || a.usage === f.usage) && (!f.mark || markOf(a.id)[f.mark]) && (!f.tag || (markOf(a.id).tags || []).includes(f.tag))
     && (!f.folder || inFolder(a, f.folder)) && words.every(w => (a.name + ' ' + a.path).toLowerCase().includes(w)));
 }
 
@@ -163,13 +163,15 @@ export function kindNav() {
     <div class="pills">${USAGE_ORDER.map(u => [u, catalogAssets().filter(a => a.usage === u).length]).filter(([u, n]) => n || f.usage === u)
       .map(([u, n]) => `<span class="pill ${f.usage === u ? 'on' : ''}" data-cusage="${u}">${t('usage.' + u)}<span class="n">${n}</span></span>`).join('')}</div>
     <div class="pills">${['favorite', 'revision'].map(m => [m, catalogAssets().filter(a => markOf(a.id)[m]).length]).filter(([m, n]) => n || f.mark === m)
-      .map(([m, n]) => `<span class="pill ${f.mark === m ? 'on' : ''}" data-cmark="${m}">${t('marks.filter.' + m)}<span class="n">${n}</span></span>`).join('')}</div>`;
+      .map(([m, n]) => `<span class="pill ${f.mark === m ? 'on' : ''}" data-cmark="${m}">${t('marks.filter.' + m)}<span class="n">${n}</span></span>`).join('')}</div>
+    ${allTags().length ? `<div class="side-section"><div class="label">${t('marks.tags')}</div></div><div class="pills">${allTags().map(([x, n]) => `<span class="pill ${f.tag === x ? 'on' : ''}" data-ctag="${esc(x)}">${esc(x)}<span class="n">${n}</span></span>`).join('')}</div>` : ''}`;
 }
 
 export function bindKindNav(el) {
   $$('.kindnav .node', el).forEach(n => n.onclick = () => { S.catFilters.kind = n.dataset.kind || null; if (S.view !== 'catalog') actions.setView('catalog'); else actions.render(); });
   $$('[data-cusage]', el).forEach(p => p.onclick = () => { const u = p.dataset.cusage; S.catFilters.usage = S.catFilters.usage === u ? null : u; actions.render(); });
   $$('[data-cmark]', el).forEach(p => p.onclick = () => { const m = p.dataset.cmark; S.catFilters.mark = S.catFilters.mark === m ? null : m; if (S.view !== 'catalog') actions.setView('catalog'); else actions.render(); });
+  $$('[data-ctag]', el).forEach(p => p.onclick = () => { const x = p.dataset.ctag; S.catFilters.tag = S.catFilters.tag === x ? null : x; if (S.view !== 'catalog') actions.setView('catalog'); else actions.render(); });
 }
 
 export function bindCatalog(el) {

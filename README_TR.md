@@ -31,13 +31,18 @@ sürümü indirmeye başlar. Açılışta kısa bir animasyon oynar (kalem tezg�
 tuş ya da tıklama geçer, sistemde "hareketi azalt" açıksa hiç oynamaz.
 `server.py` değişince sunucu yeniden başlatılmalı (kodu sıcak yüklemez).
 
-## Favoriler, revize notları, seçip aktarmak
+## Favoriler, revize notları, etiketler, seçip aktarmak
 Bir varlığın kartında **Favori** (yıldız) ve **Revize gelecek** (isteğe bağlı notuyla) var; satırlarda yıldız ve
 Revize rozeti görünür, hepsi sol menüdeki **İşaretli** sekmesinde toplanır (Revize bekleyenler / Favoriler). Satırların
 solundaki kutuyla birkaç varlığı seç (Shift: aralık); alttaki çubuktan hepsini favorile, revize işaretle ya da
 **klasöre aktar**: Unity'deki modeller kullandıkları dokularla, her biri kendi klasöründe, seçtiğin klasöre kopyalanır;
 önce plan gösterilir, orada olan dosyanın üstüne yazılmaz. Unity'deki bir modeli art klasörüne alırken de dokularını
 getirmek için kutu işaretli gelir.
+
+**Etiketler** senin kelimelerin (kahraman, bölüm 2, dış kaynak): kartta alana yazıp Enter'a bas, çarpıyla kaldır; seçili
+varlıkların hepsine alttaki çubuktaki **Etiketle…** ile ekle. Etiketler küçük harfe çevrilir. Sol menüdeki Etiketler
+kataloğu, İşaretli sekmesindeki etiketler o listeyi süzer; AI da `mark` (tags_add, tags_remove) ve `marks` (tag) ile
+kullanır.
 
 ## Denetim: kopyalar ve standartlar
 Sol menüdeki **Denetim** yalnızca öneri verir, hiçbir şeyi değiştirmez. **Standartlar**: çok büyük içe aktarılan

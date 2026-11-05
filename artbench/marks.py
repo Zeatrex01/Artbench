@@ -1,4 +1,4 @@
-"""Marks on assets: a favourite star and a "revision coming" flag with its note, per project (marks.json in the
+"""Marks on assets: a favourite star, a "revision coming" flag with its note, and tags (the person's own words), per project (marks.json in the
 project's data folder, never in the game project). They are the person's own records, keyed by asset id (an
 art-folder item id or engine:<path>); an asset with no mark left has no entry. Every change is a MARK history line."""
 import os
@@ -7,6 +7,7 @@ import time
 from . import store
 
 MARKS_FILE = "marks.json"
+TAG_MAX = 40
 
 
 def _path(cfg):
@@ -14,17 +15,28 @@ def _path(cfg):
 
 
 def load(cfg):
-    """{asset id: {favorite?: true, revision?: {note, since}, updated}}."""
+    """{asset id: {favorite?: true, revision?: {note, since}, tags?: [sorted], updated}}."""
     data = store._read_json(_path(cfg), {})
     return data if isinstance(data, dict) else {}
 
 
-def set_marks(cfg, ids, favorite=None, revision=None, note=None):
+def tag_name(value):
+    """A tag in its one form: lower case, single spaces; ValueError when empty or longer than TAG_MAX."""
+    tag = " ".join(str(value).split()).lower()
+    if not tag or len(tag) > TAG_MAX:
+        raise ValueError(f"a tag is 1 to {TAG_MAX} characters: {value!r}")
+    return tag
+
+
+def set_marks(cfg, ids, favorite=None, revision=None, note=None, add_tags=None, remove_tags=None):
     """Sets marks on every id: favorite True or False; revision True or False (False clears its note); a note alone
-    sets the revision flag with that note. None leaves a mark as it is. Returns {id: entry, or None when cleared}."""
+    sets the revision flag with that note; add_tags / remove_tags change its tags. None leaves a mark as it is.
+    Returns {id: entry, or None when cleared}."""
     ids = [i for i in (ids or []) if i]
     if not ids:
         raise ValueError("no asset ids given")
+    add = {tag_name(t) for t in add_tags or []}
+    remove = {tag_name(t) for t in remove_tags or []}
     if revision is None and note is not None:
         revision = True
     now = time.time()
@@ -43,6 +55,11 @@ def set_marks(cfg, ids, favorite=None, revision=None, note=None):
                                      "since": before.get("since", now)}
             elif revision is False:
                 entry.pop("revision", None)
+            if add or remove:
+                tags = (set(entry.get("tags") or []) | add) - remove
+                entry.pop("tags", None)
+                if tags:
+                    entry["tags"] = sorted(tags)
             if entry:
                 entry["updated"] = now
                 data[asset] = entry
@@ -62,9 +79,25 @@ def describe(entry):
     parts = ["favorite"] if entry.get("favorite") else []
     if entry.get("revision"):
         parts.append("revision: " + (entry["revision"]["note"] or "(no note)"))
-    return ", ".join(parts)
+    if entry.get("tags"):
+        parts.append("tags: " + ", ".join(entry["tags"]))
+    return "; ".join(parts)
+
+
+def tags(data):
+    """{tag: assets carrying it}, the most used first, then by name."""
+    per = {}
+    for e in data.values():
+        for tag in e.get("tags") or []:
+            per[tag] = per.get(tag, 0) + 1
+    return dict(sorted(per.items(), key=lambda kv: (-kv[1], kv[0])))
 
 
 def counts(data):
-    return {"favorite": sum(1 for e in data.values() if e.get("favorite")),
-            "revision": sum(1 for e in data.values() if e.get("revision"))}
+    """Favourites and revisions; the tags with their counts only when any asset has one."""
+    out = {"favorite": sum(1 for e in data.values() if e.get("favorite")),
+           "revision": sum(1 for e in data.values() if e.get("revision"))}
+    per = tags(data)
+    if per:
+        out["tags"] = per
+    return out

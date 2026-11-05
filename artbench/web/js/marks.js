@@ -1,4 +1,4 @@
-// Marks and selection: the star and the "revision coming" flag on rows, tiles and cards (the project's marks.json,
+// Marks and selection: the star, the "revision coming" flag and tags on rows, tiles and cards (the project's marks.json,
 // /api/v1/mark), the Marked view, picking several assets (a box on each row, Shift for a range) with a bar to star,
 // flag or export them, and the export of game-project models with their textures into a folder of one's own
 // (/api/v1/export_plan, /api/v1/export: one folder per model, nothing overwritten).
@@ -10,12 +10,20 @@ import { S, KIND, actions, findEntry, isProject } from './state.js';
 import { kindIcon, rowVisual } from './catalog.js';
 
 export const markOf = id => (S.data?.marks || {})[id] || {};
+/** [[tag, assets carrying it]], the most used first. */
+export function allTags() {
+  const per = {};
+  Object.values(S.data?.marks || {}).forEach(m => (m.tags || []).forEach(x => { per[x] = (per[x] || 0) + 1; }));
+  return Object.entries(per).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+}
+const tagChip = x => `<span class="mtag">${esc(x)}</span>`;
 
-/** The star and the revision chip a row or tile shows (nothing when the asset carries no mark). */
+/** The star, the revision chip and the first tags a row or tile shows (nothing when the asset carries no mark). */
 export function markBadges(id) {
-  const m = markOf(id);
+  const m = markOf(id), tags = m.tags || [];
   return (m.favorite ? `<span class="mstar" title="${t('marks.favorite')}">${icon('star')}</span>` : '')
-    + (m.revision ? `<span class="chip warn nodot mrev" title="${esc(m.revision.note || t('marks.revisionComing'))}">${icon('flag')}${t('marks.revision')}</span>` : '');
+    + (m.revision ? `<span class="chip warn nodot mrev" title="${esc(m.revision.note || t('marks.revisionComing'))}">${icon('flag')}${t('marks.revision')}</span>` : '')
+    + tags.slice(0, 2).map(tagChip).join('') + (tags.length > 2 ? `<span class="mtag more" title="${esc(tags.slice(2).join(', '))}">+${tags.length - 2}</span>` : '');
 }
 
 /** The pick box on a row or tile. */
@@ -54,10 +62,12 @@ export function renderPickBar() {
   bar.innerHTML = `<b>${t('pick.n', { n })}</b>
     <button class="btn sm" id="pkFav">${icon('star')}${t(allFav ? 'marks.unfavorite' : 'marks.favorite')}</button>
     <button class="btn sm" id="pkRev">${icon('flag')}${t('marks.revisionComing')}</button>
+    <button class="btn sm" id="pkTag">${icon('plus')}${t('pick.tag')}</button>
     <button class="btn sm primary" id="pkExport" ${models ? '' : 'disabled'} title="${models ? '' : t('pick.exportOnlyModels')}">${icon('folder')}${t('pick.export', { n: models })}</button>
     <div class="grow"></div><button class="btn ghost sm" id="pkClear">${icon('x')}${t('pick.clear')}</button>`;
   $('#pkFav').onclick = () => setMarks(ids, { favorite: !allFav });
   $('#pkRev').onclick = () => askRevision(ids);
+  $('#pkTag').onclick = () => askTag(ids);
   $('#pkExport').onclick = () => exportModels(exportable());
   $('#pkClear').onclick = () => { S.picked.clear(); actions.renderView(); };
 }
@@ -77,29 +87,45 @@ async function askRevision(ids, current = '') {
   await setMarks(ids, { revision: true, note });
 }
 
-/** The card's own row: star, flag, and the revision note. */
+async function askTag(ids) {
+  const tag = await modal({ title: t('marks.tagTitle', { n: ids.length }), body: t('marks.tagBody'),
+    field: { label: t('marks.tagLabel'), value: '' }, ok: t('marks.tagOk') });
+  if (!tag) return;
+  await setMarks(ids, { tags_add: [tag] });
+}
+
+/** The card's own row: star, flag, the revision note, and the tags (a field to add one, a cross to remove one). */
 export function markSection(e) {
-  const m = markOf(e.id);
+  const m = markOf(e.id), mine = m.tags || [];
+  const known = allTags().map(([x]) => x).filter(x => !mine.includes(x));
   return `<div class="sec marksec"><div class="row">
       <button class="btn sm ${m.favorite ? 'on' : ''}" id="mkFav">${icon('star')}${t(m.favorite ? 'marks.unfavorite' : 'marks.favorite')}</button>
       <button class="btn sm ${m.revision ? 'on' : ''}" id="mkRev">${icon('flag')}${t(m.revision ? 'marks.revisionDone' : 'marks.revisionComing')}</button></div>
-    ${m.revision ? `<textarea id="mkNote" rows="2" placeholder="${t('marks.notePh')}">${esc(m.revision.note || '')}</textarea>` : ''}</div>`;
+    ${m.revision ? `<textarea id="mkNote" rows="2" placeholder="${t('marks.notePh')}">${esc(m.revision.note || '')}</textarea>` : ''}
+    <div class="mtags">${mine.map(x => `<span class="mtag">${esc(x)}<button data-untag="${esc(x)}" title="${t('marks.tagRemove')}">${icon('x')}</button></span>`).join('')}
+      <input type="text" id="mkTag" list="mkTagList" placeholder="${t('marks.tagPh')}" maxlength="40" spellcheck="false">
+      <datalist id="mkTagList">${known.map(x => `<option value="${esc(x)}">`).join('')}</datalist></div></div>`;
 }
 export function bindMarkSection(el, e) {
   const fav = $('#mkFav', el); if (fav) fav.onclick = () => setMarks([e.id], { favorite: !markOf(e.id).favorite });
   const rev = $('#mkRev', el); if (rev) rev.onclick = () => (markOf(e.id).revision ? setMarks([e.id], { revision: false }) : askRevision([e.id]));
   const note = $('#mkNote', el);
   if (note) note.onchange = () => setMarks([e.id], { revision: true, note: note.value });
+  const tag = $('#mkTag', el);
+  if (tag) tag.onkeydown = ev => { if (ev.key === 'Enter' && tag.value.trim()) setMarks([e.id], { tags_add: [tag.value] }); };
+  $$('[data-untag]', el).forEach(b => b.onclick = () => setMarks([e.id], { tags_remove: [b.dataset.untag] }));
 }
 
-/** The Marked view: what waits for a revision (with its note), then the favourites. */
+/** The Marked view: what waits for a revision (with its note), then the favourites; a tag narrows. */
 export function viewMarked() {
-  const marks = S.data?.marks || {}, f = S.markFilter || 'all';
-  const ids = Object.keys(marks).filter(id => f === 'all' || marks[id][f]);
+  const marks = S.data?.marks || {}, f = S.markFilter || 'all', tags = allTags();
+  if (S.markTag && !tags.some(([x]) => x === S.markTag)) S.markTag = null;
+  const ids = Object.keys(marks).filter(id => (f === 'all' || marks[id][f]) && (!S.markTag || (marks[id].tags || []).includes(S.markTag)));
   ids.sort((a, b) => (!marks[a].revision - !marks[b].revision) || a.localeCompare(b));
   const seg = ['all', 'revision', 'favorite'].map(k => `<button class="${f === k ? 'on' : ''}" data-mfilter="${k}">${t('marks.filter.' + k)}
     <span class="n">${k === 'all' ? Object.keys(marks).length : Object.values(marks).filter(m => m[k]).length}</span></button>`).join('');
-  return `<div class="row mhead"><div class="seg">${seg}</div></div>
+  const tagPills = tags.length ? `<div class="pills mtagpills">${tags.map(([x, n]) => `<span class="pill ${S.markTag === x ? 'on' : ''}" data-mtag="${esc(x)}">${esc(x)}<span class="n">${n}</span></span>`).join('')}</div>` : '';
+  return `<div class="row mhead"><div class="seg">${seg}</div>${tagPills}</div>
     ${ids.length ? `<div class="mlist">${ids.map(id => markedRow(id, marks[id])).join('')}</div>` : emptyState('star', t('marks.empty'))}`;
 }
 function markedRow(id, m) {
@@ -112,6 +138,7 @@ function markedRow(id, m) {
 }
 export function bindMarked(el) {
   $$('[data-mfilter]', el).forEach(b => b.onclick = () => { S.markFilter = b.dataset.mfilter; actions.renderView(); });
+  $$('[data-mtag]', el).forEach(b => b.onclick = () => { S.markTag = S.markTag === b.dataset.mtag ? null : b.dataset.mtag; actions.renderView(); });
 }
 
 /** Game-project models with their textures into a folder: choose it, see the plan, copy. */
