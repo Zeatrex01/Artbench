@@ -2,7 +2,7 @@
 layout, the reference graph, scene contents."""
 import os
 
-from .. import actions, catalog, changes, checks, config, engines, github_link, graph, layout, marks, scan, scenes, tasks
+from .. import actions, asset_meta, catalog, changes, checks, config, engines, github_link, graph, layout, marks, scan, scenes, tasks
 from ..errors import NotFound
 from .common import GRAPH_CAP, LIST_CAP, _cfg, _item_summary, _page
 
@@ -116,6 +116,10 @@ def op_asset(args):
         if entry is None:
             raise NotFound(f"no asset {wanted!r}; search for it")
         out = dict(entry)
+        if entry.get("kind") == "model" and not entry.get("stats"):      # its card opened: measure this one now
+            state = asset_meta.measure(cfg, engines.of(cfg).from_engine_path(cfg, entry["path"]))
+            if state == "pending":
+                out["stats"] = None
         for key in ("used_by", "uses"):
             rows = entry.get(key) or []
             out[key], out[key + "_count"] = rows[:LIST_CAP], len(rows)

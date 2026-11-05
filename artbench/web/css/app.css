@@ -663,3 +663,8 @@ body.picking #view { padding-bottom: 84px; }
 .ahrow .time { color: var(--dim); font: 11px var(--mono); white-space: nowrap; }
 .ahrow .mono { color: var(--muted); font-size: 11.5px; word-break: break-all; }
 .ahmore { font-size: 11.5px; padding-top: 6px; }
+
+/* Performance settings on a project card */
+.projcard .perfrow { margin-top: 6px; flex-wrap: wrap; gap: 8px 14px; }
+.perf { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--muted); }
+.perf select { font-size: 12px; padding: 4px 26px 4px 8px; }

@@ -37,8 +37,15 @@ function projectCard(p) {
   const here = p.id === S.project;
   return `<div class="card projcard ${here ? 'here' : ''}"><div class="pmark ${p.error ? 'err' : ''}">${icon(p.error ? 'alert' : p.mode === 'project' ? 'grid' : 'layers')}</div>
     <div class="pinfo"><b>${esc(p.name || p.id)}</b><span class="mono ellip" title="${esc(p.config_path || '')}">${esc(p.config_path || '')}</span>${p.error ? `<span class="err">${esc(p.error)}</span>` : ''}
-      ${!p.error ? `<div class="prow"><span class="chip ${p.mode === 'project' ? 'info' : 'violet'} nodot">${t('projects.modeChip.' + (p.mode || 'art'))}</span><input type="text" class="ghfield" data-gh="${esc(p.id)}" value="${esc(p.github_account || '')}" placeholder="${t('projects.github')}" title="${t('projects.githubHint')}" spellcheck="false"></div>` : ''}</div>
+      ${!p.error ? `<div class="prow"><span class="chip ${p.mode === 'project' ? 'info' : 'violet'} nodot">${t('projects.modeChip.' + (p.mode || 'art'))}</span><input type="text" class="ghfield" data-gh="${esc(p.id)}" value="${esc(p.github_account || '')}" placeholder="${t('projects.github')}" title="${t('projects.githubHint')}" spellcheck="false"></div>${perfRow(p)}` : ''}</div>
     <div class="pact">${!p.error ? `<button class="btn ${here ? '' : 'primary'} sm" data-popen="${esc(p.id)}">${here ? t('projects.opened') : t('projects.open')}</button>` : ''}<button class="btn ghost sm danger" data-pdetach="${esc(p.id)}" title="${t('projects.detachTitle')}">${t('projects.detach')}</button></div></div>`;
+}
+
+/** How much background Blender work the project asks for: model previews and model measuring. */
+function perfRow(p) {
+  const sel = (key, values) => `<label class="perf"><span>${t('perf.' + key)}</span><select data-perf="${key}" data-pid="${esc(p.id)}" title="${t('perf.' + key + 'Hint')}">
+    ${values.map(v => `<option value="${v}" ${p[key] === v ? 'selected' : ''}>${t('perf.' + key + '.' + v)}</option>`).join('')}</select></label>`;
+  return `<div class="prow perfrow">${sel('previews', ['visible', 'off'])}${sel('model_stats', ['on_open', 'background', 'off'])}</div>`;
 }
 
 /** The connect area: the Unity project folder first, then the two ways to connect it. */
@@ -251,6 +258,14 @@ function bind(el) {
   const on = (sel, ev, fn) => { const n = $(sel, el); if (n) n[ev] = fn; };
   on('#pClose', 'onclick', closeProjects);
   $$('[data-popen]', el).forEach(b => b.onclick = () => { actions.switchProject(b.dataset.popen); closeProjects(); });
+  $$('[data-perf]', el).forEach(s => s.onchange = async () => {
+    try {
+      await api.post('/api/v1/performance_settings', { project: s.dataset.pid, [s.dataset.perf]: s.value });
+      toast(t('perf.saved'), 'ok');
+      await actions.loadProjects();
+      if (s.dataset.pid === S.project) actions.refresh(true);
+    } catch (e) { toast(e.message); }
+  });
   $$('[data-gh]', el).forEach(f => {
     const save = async () => {
       try {

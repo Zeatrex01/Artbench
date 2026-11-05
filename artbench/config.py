@@ -22,6 +22,8 @@ DEFAULTS = {
     "package_extensions": [".png", ".tga", ".jpg", ".jpeg"],    # textures that travel with a model; the rest are sources
     "engine_layout": "follow",                                   # "per_model": model + textures in one engine folder
     "engine_texture_targets": {},                                # category -> engine folder for new textures (follow)
+    "previews": "visible",                                       # model previews by background Blender: visible | off
+    "model_stats": "on_open",                                    # model measuring: background (all) | on_open | off
     "bridge_fresh_seconds": 600,                                # a live scene report counts this long
     "report_limits": {},                                        # over live.DEFAULT_LIMITS: scenes, nodes, uses
     "blend_extensions": [".blend"],

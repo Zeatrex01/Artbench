@@ -39,6 +39,12 @@ solundaki kutuyla birkaç varlığı seç (Shift: aralık); alttaki çubuktan he
 önce plan gösterilir, orada olan dosyanın üstüne yazılmaz. Unity'deki bir modeli art klasörüne alırken de dokularını
 getirmek için kutu işaretli gelir.
 
+**Performans**: sol alttaki **Projeler** ekranında her projenin kartında iki ayar var. **Model önizlemeleri**: Açık
+(yalnızca ekrandaki satırlar) ya da Kapalı; görseller (png, jpg) her zaman görünür. **Model ölçümü** (üçgen, vertex,
+materyal): **Kart açılınca** (varsayılan, yalnızca açtığın model ölçülür), **Hepsi, arka planda** (bütün modeller
+sırayla ölçülür, büyük projede Blender uzun süre çalışır) ya da Kapalı. Daha önce ölçülmüş modellerin sayıları her
+ayarda görünür. Üçgen sütunu, `tris:` araması ve üçgen bütçesi yalnızca ölçülmüş modelleri sayar.
+
 **Arşivle**: hiçbir şeyin kullanmadığı Unity varlıklarını seçip alttaki çubuktan (ya da kartından) **Arşivle…** de.
 Dosya `.meta`'sıyla birlikte oyun projesinin dışına, arşive taşınır; silinmez. Bir prefab ya da materyalin kullandığı
 varlık arşivlenmez, pencere neden kaldığını söyler. **Arşiv** sekmesinde (Daha fazla altında) **Geri al** dosyayı aynı

@@ -43,6 +43,8 @@ def status(cfg, path):
         return "none", None
     if os.path.splitext(path)[1].lower() in DIRECT and os.path.getsize(path) <= DIRECT_MAX:
         return "ready", path
+    if cfg.get("previews") == "off":
+        return "none", None              # model previews turned off: no Blender, the page shows the placeholder tile
     png = thumb_path(path)
     state = blender_jobs.request(cfg, RENDER_SCRIPT, path, png, (str(SIZE),), blender_jobs.PRIORITY_THUMB)
     if state == "none":

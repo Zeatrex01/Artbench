@@ -7,6 +7,8 @@ import os
 
 from . import blender_jobs, store
 
+PREVIEWS = ("visible", "off")
+MODEL_STATS = ("background", "on_open", "off")
 SNAPSHOT_VERSION = 1
 META_SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "model_meta.py")
 CACHE_KIND = "meta"
@@ -65,21 +67,64 @@ def stats_of(snap):
             "bones": snap.get("bones") or 0, "animations": len(snap.get("actions") or [])}
 
 
+def performance(cfg):
+    """{previews, model_stats}: how much background Blender work the project asks for (config, DEFAULTS)."""
+    previews, stats = cfg.get("previews"), cfg.get("model_stats")
+    return {"previews": previews if previews in PREVIEWS else "visible",
+            "model_stats": stats if stats in MODEL_STATS else "on_open"}
+
+
+def set_performance(cfg, previews=None, model_stats=None):
+    """Writes the given settings into the project config (None leaves one as it is); a PERFORMANCE history line."""
+    if previews is not None and previews not in PREVIEWS:
+        raise ValueError(f"previews is one of {', '.join(PREVIEWS)}")
+    if model_stats is not None and model_stats not in MODEL_STATS:
+        raise ValueError(f"model_stats is one of {', '.join(MODEL_STATS)}")
+    raw = store._read_json(cfg["config_path"], {})
+    raw = raw if isinstance(raw, dict) else {}
+    for key, value in (("previews", previews), ("model_stats", model_stats)):
+        if value is not None:
+            raw[key] = value
+    store._write_json(cfg["config_path"], raw)
+    out = performance({**cfg, **raw})
+    with store.locked(cfg):
+        store.log(cfg, "PERFORMANCE", f"previews={out['previews']}", f"model_stats={out['model_stats']}")
+    return out
+
+
 def attach_stats(cfg, entries, path_of):
-    """Puts "stats" on every model entry: stats_of() its cached snapshot, or None while Blender measures it (queued
-    behind the previews; nothing is queued without Blender). path_of(entry) is the model's file."""
+    """Puts "stats" on model entries: stats_of() a cached snapshot; None while Blender measures it; no key when it is
+    not measured and nothing is queued. model_stats "background" queues every unmeasured model behind the previews,
+    "on_open" only the one whose card opens (measure()), "off" none. path_of(entry) is the model's file."""
+    mode = performance(cfg)["model_stats"]
     for e in entries:
         if e.get("kind") != "model":
             continue
         path = path_of(e)
-        snap = None
-        if path and os.path.isfile(path):
-            snap = _read(blender_jobs.cache_path(CACHE_KIND, path, CACHE_EXT))
-            if snap is None:
-                blender_jobs.request(cfg, META_SCRIPT, path, blender_jobs.cache_path(CACHE_KIND, path, CACHE_EXT),
-                                     priority=blender_jobs.PRIORITY_STATS)
-        e["stats"] = stats_of(snap) if snap else None
+        if not path or not os.path.isfile(path):
+            if mode == "background":
+                e["stats"] = None
+            continue
+        out = blender_jobs.cache_path(CACHE_KIND, path, CACHE_EXT)
+        snap = _read(out)
+        if snap is not None:
+            e["stats"] = stats_of(snap)
+        elif mode == "background":
+            blender_jobs.request(cfg, META_SCRIPT, path, out, priority=blender_jobs.PRIORITY_STATS)
+            e["stats"] = None
+        elif blender_jobs.is_pending(out):
+            e["stats"] = None
     return entries
+
+
+def measure(cfg, path):
+    """The card of one model opened: measure it now (ahead of previews) unless measuring is off. The job state."""
+    if performance(cfg)["model_stats"] == "off":
+        return "off"
+    if not path or not os.path.isfile(path):
+        return "none"
+    return blender_jobs.request(cfg, META_SCRIPT, path, blender_jobs.cache_path(CACHE_KIND, path, CACHE_EXT),
+                                priority=blender_jobs.PRIORITY_META)
 
 
 # --- card payload -----------------------------------------------------------------------------------------------

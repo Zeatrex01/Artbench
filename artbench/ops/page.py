@@ -23,7 +23,8 @@ def find(cfg, item_id):
 
 def projects():
     return [{"id": c.get("id"), "name": c.get("name", c.get("id")), "error": c.get("error"), "config_path": c.get("config_path"),
-             "mode": c.get("mode"), "github_account": c.get("github_account")} for c in config.projects()]
+             "mode": c.get("mode"), "github_account": c.get("github_account"),
+             **({} if c.get("error") else asset_meta.performance(c))} for c in config.projects()]
 
 
 def state(cfg):

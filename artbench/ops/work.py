@@ -1,7 +1,7 @@
 """Operations on the person's own records: tasks, notes, moves between states, history, the change feed."""
 import os
 
-from .. import actions, changes, marks, scan, store, tasks
+from .. import actions, asset_meta, changes, marks, scan, store, tasks
 from .common import _cfg, _desktop_item, _page
 
 
@@ -100,3 +100,11 @@ def op_asset_history(args):
             keys.add("engine:" + rel)
     page, total = _page(changes.timeline(cfg, keys, tails), {**args, "limit": args.get("limit") or 20})
     return {"total": total, "entries": page}
+
+
+def op_performance_settings(args):
+    """How much background Blender work the project asks for; previews and model_stats change it."""
+    cfg = _cfg(args["project"])
+    if args.get("previews") is None and args.get("model_stats") is None:
+        return asset_meta.performance(cfg)
+    return asset_meta.set_performance(cfg, previews=args.get("previews"), model_stats=args.get("model_stats"))

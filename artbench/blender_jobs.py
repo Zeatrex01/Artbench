@@ -101,6 +101,12 @@ def request(cfg, script, src, out, args=(), priority=PRIORITY_THUMB):
     return "pending"
 
 
+def is_pending(out):
+    """Whether a job for `out` waits or runs."""
+    with _lock:
+        return out in _pending
+
+
 def run_now(cfg, script, src, out, args=(), timeout=JOB_TIMEOUT):
     """Runs the job on this thread (the send plan needs the answer now). True when `out` exists afterwards."""
     if os.path.exists(out):

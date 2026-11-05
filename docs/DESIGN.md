@@ -86,6 +86,8 @@ animator bad, data muted.
   Archive…: on the pick bar (when a Unity asset is picked) and on the card of a Unity asset; a dialog lists what
   goes (+ .meta, a warning for what is loaded by name) and what stays and why, with a danger-styled OK. The Archive
   view (under More) lists what was moved out, the latest first, each with its date and Restore.
+  Projects screen: each project card has Model previews (On, rows on screen | Off) and Model measuring (When a
+  card opens, the default | All, in the background | Off), small selects under the GitHub field; Saved as a toast.
   Catalog search takes keys (the placeholder shows a few: kind:texture, px:>2048, is:fav, tag:); CSV sits at the
   right end of the catalog's toolbar and downloads the list as it is filtered.
   History: one line on every card (clock, History of this asset, its count once loaded, a chevron); opened, the
