@@ -1,8 +1,9 @@
 # A version tag publishes the Windows download: push a tag named v<version> (the version in artbench/__init__.py, e.g.
 # v0.1.0) and this builds the portable folder on Windows, starts it with its own Python, asks it whether it answers,
-# and only then creates the GitHub Release with the zip and the Blender add-on attached.
-#   git tag v0.1.0 && git push origin v0.1.0
-# A 0.x version is published as a pre-release (a preview).
+# and only then creates the GitHub Release with the zip and the Blender add-on attached. The zip goes up twice: with
+# its version, and as Artbench-windows-x64.zip, so .../releases/latest/download/Artbench-windows-x64.zip (the README's
+# and the page's lasting link) always fetches the newest. Not a pre-release: GitHub's "latest" skips those.
+#   git tag v0.1.1 && git push origin v0.1.1
 name: release
 
 on:
@@ -51,6 +52,5 @@ jobs:
         run: |
           $zip = (Get-ChildItem dist/Artbench-*-windows-x64.zip | Select-Object -First 1).FullName
           $notes = "Windows: download $((Split-Path $zip -Leaf)), unzip it anywhere (not inside a game project) and double-click Artbench.bat. Python is inside; nothing to install. The Blender add-on is inside the folder too, and attached here on its own (Blender 4.2+: Edit > Preferences > Get Extensions > Install from Disk)."
-          $extra = @()
-          if ("${{ github.ref_name }}" -like "v0.*") { $extra += "--prerelease" }   # 0.x: a preview, not a stable release
-          gh release create "${{ github.ref_name }}" $zip dist/artbench_bridge.zip --title "Artbench ${{ github.ref_name }}" --notes $notes @extra
+          Copy-Item $zip dist/Artbench-windows-x64.zip             # the same file under a name that never changes
+          gh release create "${{ github.ref_name }}" $zip dist/Artbench-windows-x64.zip dist/artbench_bridge.zip --title "Artbench ${{ github.ref_name }}" --notes $notes

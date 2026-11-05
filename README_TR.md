@@ -1,5 +1,12 @@
 # Artbench
 
+### ⬇ [Artbench'i Windows için indir](https://github.com/Zeatrex01/Artbench/releases/latest/download/Artbench-windows-x64.zip)
+
+Zip'i istediğin yere aç ve `Artbench.bat`'a çift tıkla: Python içinde, kurulacak bir şey yok. ·
+[artbench.malik3d.page](https://artbench.malik3d.page/) · [tüm sürümler](../../releases)
+
+> Yeşil **Code → Download ZIP** düğmesi kaynak kodu indirir, o da Python 3.11+ ister. Kullanmak için yukarıdaki indirmeyi al.
+
 Git'ten klonlanmış oyun projesi ile ayrı art klasörü arasında yerel bir art köprüsü:
 
 ```
@@ -18,9 +25,10 @@ Masaüstünde durur, repolara girmez. Sadece Python 3 ister; Unity'ye, eklentiye
 ## Çalıştırmak
 Sayfa İngilizce açılır; sol alttaki **TR / EN** düğmesi dili değiştirir ve tarayıcı bunu hatırlar.
 
-`Artbench.bat`'a çift tıkla; tarayıcıda `http://127.0.0.1:8765/` açılır. Pencereyi kapatınca (Ctrl+C) durur.
-Açılışta kısa bir animasyon oynar (küp slota yerleşir); tarayıcı oturumu başına bir kez, herhangi bir tuş ya da
-tıklama geçer, sistemde "hareketi azalt" açıksa hiç oynamaz.
+**Hazır sürüm (önerilen):** yukarıdaki indirme; zip'i aç, `Artbench.bat`'a çift tıkla, Artbench kendi penceresinde
+açılır. **Kaynak koddan:** kökteki `Artbench.bat` bilgisayarda Python 3.11+ varsa onunla açar; yoksa bunu söyler ve hazır
+sürümü indirmeye başlar. Açılışta kısa bir animasyon oynar (kalem tezgâhı çizer); pencere başına bir kez, herhangi bir
+tuş ya da tıklama geçer, sistemde "hareketi azalt" açıksa hiç oynamaz.
 `server.py` değişince sunucu yeniden başlatılmalı (kodu sıcak yüklemez).
 
 ## Makine kontrolü
@@ -284,7 +292,7 @@ yazılır; elle de düzenlenebilir.
 ## Windows paketini üretmek
 `Build.bat`'a çift tıkla (ya da `python tools/build_portable.py`): kendi Python'unu taşıyan
 `dist\Artbench-<sürüm>-windows-x64.zip` oluşur ve `dist` klasörü açılır. Yayınlamak için `artbench/__init__.py`'deki
-sürümü ayarla ve aynı sürümle bir etiket gönder (`git tag v0.1.0`, `git push origin v0.1.0`; 0.x sürümler önizleme olarak yayımlanır): GitHub paketi Windows'ta
+sürümü ayarla ve aynı sürümle bir etiket gönder (`git tag v0.1.1`, `git push origin v0.1.1`): GitHub paketi Windows'ta
 kurar, dener ve Releases sayfasına koyar. İndirme sayfası (https://artbench.malik3d.page/, kaynağı `site/`)
 her yayından sonra yeni zip'i gösterecek şekilde GitHub Pages ile kendiliğinden güncellenir.
 
