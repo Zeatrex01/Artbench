@@ -226,3 +226,22 @@ def timeline(cfg, keys, tails):
             out.append({"time": e["time"], "source": "change", "what": e["change"],
                         "detail": e["path"] + (f" (from {e['from']})" if e.get("from") else "")})
     return sorted(out, key=lambda e: e["time"], reverse=True)
+
+
+def latest_for(cfg, ids, look_back=5000):
+    """{asset id: {time, what}}: the newest change-feed entry for each asset (an art-folder item id or engine:<path>),
+    found in one pass over the latest `look_back` lines; assets with none are left out."""
+    wanted = {}
+    for asset in ids:
+        tail = asset[len("engine:"):] if asset.startswith("engine:") else asset
+        wanted[asset] = ({asset, "art:" + asset}, {tail})
+    out = {}
+    for e in _parse(_lines(cfg)[-look_back:]):
+        if e["change"] == "BASELINE":
+            continue
+        for asset, (keys, tails) in wanted.items():
+            if asset not in out and (f"{e['side']}:{e['path']}" in keys or _names(e["path"], set(), tails)):
+                out[asset] = {"time": e["time"], "what": e["change"]}
+        if len(out) == len(wanted):
+            break
+    return out

@@ -86,7 +86,11 @@ animator bad, data muted.
   Archive…: on the pick bar (when a Unity asset is picked) and on the card of a Unity asset; a dialog lists what
   goes (+ .meta, a warning for what is loaded by name) and what stays and why, with a danger-styled OK. The Archive
   view (under More) lists what was moved out, the latest first, each with its date and Restore.
-  Tasks: a finished card has an archive button beside delete; the Done column's head has Archive all. Under the
+  Tasks: Detailed / Compact above the board (Detailed by default, remembered). A detailed card tied to an asset shows
+  its preview (76 px), name and kind, then: Open in Blender now with a pulsing dot (the card's border turns ok),
+  Changed and when, the revision note in warn ink; a click on the asset opens its card. Tasks without an asset keep
+  the compact card.
+  A finished card has an archive button beside delete; the Done column's head has Archive all. Under the
   board, Archived tasks (a quiet line with a chevron) opens the archived ones, each with its date and Restore.
   AI line: one line at the top of the sidebar's footer (a dot, AI, the latest tool, its time; the dot pulses for 15 s
   after a call, unless reduced motion); a click opens a small list above it: time, tool, arguments in mono, a changed

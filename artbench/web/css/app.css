@@ -705,3 +705,22 @@ body.picking #view { padding-bottom: 84px; }
 .tarow .t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
 .tarow .dim { font-size: 11.5px; }
 .tarnone { font-size: 12px; padding: 6px 4px; }
+
+/* Detailed task cards: the asset's preview, open in Blender now, its last change, its revision note */
+.taskmode { margin: 0 0 10px; justify-content: flex-end; }
+.task.rich { gap: 8px; }
+.task.rich.working { border-color: var(--ok); }
+.tasset { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 10px; align-items: start; cursor: pointer; }
+.tasset .tvis .thumb.sq, .tasset .tvis .kicon { width: 76px; height: 76px; background: var(--s3); border: 1px solid var(--line); border-radius: var(--r1); }
+.tasset .tvis .kicon svg { width: 30px; height: 30px; }
+.tinfo { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.tinfo .aname { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+.tinfo .aname b { font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tinfo .aname span { font-size: 11px; color: var(--dim); white-space: nowrap; }
+.tinfo .lv { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--muted); min-width: 0; }
+.tinfo .lv svg { width: 12px; height: 12px; flex: none; }
+.tinfo .lv .mono { color: var(--dim); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tinfo .lv.now { color: var(--text); font-weight: 500; }
+.tinfo .lv .dot.live { animation: ai-live 1.2s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .tinfo .lv .dot.live { animation: none; } }
+.tinfo .lv.rev { color: var(--warn-ink); }

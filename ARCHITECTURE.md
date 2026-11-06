@@ -696,6 +696,12 @@ served preview's mtime notes its use, at most once a day); they are rebuilt on d
 (`.cache/meta`) are never trimmed: a change's before/after needs the old content's. A project on an unplugged drive
 loses its cache entries and is read in full on its next scan; nothing else is lost.
 
+**Detailed task cards.** The page's GET /api/tasks gives each task tied to an asset `live` (`ops.page._live`; the
+AI's `tasks` op has none): `changed` {time, what} (the asset's newest change-feed entry, `changes.latest_for`, one pass
+over the latest 5000 lines), `blender` (the open .blend's name when it is this asset's: the file itself, a model bound
+to it, or a model of the same stem; from the add-on's report, `blender_link.status`), `revision` (its revision note).
+The board's Detailed cards show the asset's preview, name and kind, then those lines; Compact keeps the small card.
+
 **Task archive.** A finished task can be archived (`tasks.archive`, `archive_done`, `restore`): it gets `archived`
 (a time) and leaves the board, the asset cards and the counts, but stays in tasks.json; `tasks.load(cfg,
 archived=True)` lists the archived ones, the latest first. Only a done task is archived (ValueError otherwise). The AI

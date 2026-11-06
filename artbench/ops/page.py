@@ -1,7 +1,9 @@
 """What the page's own routes (/api/*) need, in the shapes the page reads. These are not operations: no MCP tool and
 no command line reach them (programs use /api/v1). The server only carries requests here; it holds the project lock
 around the calls that scan or write, as before."""
-from .. import actions, asset_meta, catalog, changes, config, deploy, engines, graph, live, marks, mcp_link, package, scan, store, tasks, thumbs
+import os
+
+from .. import actions, asset_meta, blender_link, catalog, changes, config, deploy, engines, graph, live, marks, mcp_link, package, scan, store, tasks, thumbs
 from ..errors import NotFound
 
 ENGINE_REPORT_SCHEMA = live.SCHEMA
@@ -72,7 +74,41 @@ def reference_graph(cfg):
 
 
 def task_list(cfg, archived=False):
-    return tasks.load(cfg, archived=archived)
+    """The board; its tasks tied to an asset carry `live` (see _live) for the detailed cards. The AI's `tasks` op
+    has none of it."""
+    out = tasks.load(cfg, archived=archived)
+    return out if archived else _live(cfg, out)
+
+
+def _live(cfg, board):
+    """live on each task tied to an asset: changed {time, what} (its newest file change), blender (the open .blend's
+    name, when it is this asset's: the file itself, a model bound to it, or a model of the same name), revision (its
+    revision note)."""
+    ids = {t["asset"] for t in board if t.get("asset")}
+    if not ids:
+        return board
+    latest = changes.latest_for(cfg, ids)
+    session = blender_link.status()
+    open_file = session.get("file") if session.get("open") and session.get("file") else None
+    stem = os.path.splitext(os.path.basename(open_file))[0].lower() if open_file else None
+    models = tuple(e.lower() for e in cfg.get("model_extensions") or ())
+    revisions = marks.load(cfg)
+    for t in board:
+        asset = t.get("asset")
+        if not asset:
+            continue
+        live, name = {}, asset.rsplit("/", 1)[-1]
+        if asset in latest:
+            live["changed"] = latest[asset]
+        if open_file and (asset == session.get("asset") or asset in (session.get("models") or [])
+                          or (name.lower().endswith(models) and os.path.splitext(name)[0].lower() == stem)):
+            live["blender"] = os.path.basename(open_file)
+        revision = (revisions.get(asset) or {}).get("revision")
+        if revision:
+            live["revision"] = revision.get("note") or ""
+        if live:
+            t["live"] = live
+    return board
 
 
 def thumb(cfg, path):

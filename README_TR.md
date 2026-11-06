@@ -45,6 +45,10 @@ solundaki kutuyla birkaç varlığı seç (Shift: aralık); alttaki çubuktan he
 önce plan gösterilir, orada olan dosyanın üstüne yazılmaz. Unity'deki bir modeli art klasörüne alırken de dokularını
 getirmek için kutu işaretli gelir.
 
+**Detaylı görev kartları**: bir varlığa bağlı görevin kartında varlığın önizlemesi, adı ve türü görünür; .blend dosyası
+şu an Blender'da açıksa **Şu an Blender'da açık** (yanıp sönen nokta), dosyası değiştiyse ne zaman değiştiği, revize
+işareti varsa notu yazar. Panonun üstündeki **Detaylı / Sade** ile küçük kartlara dönebilirsin.
+
 **Görev arşivi**: bitmiş bir görevin kartındaki arşiv düğmesi onu panodan kaldırır; Bitti sütununun başındaki
 **Hepsini arşivle** bitmiş görevlerin hepsini kaldırır. Hiçbiri silinmez: panonun altındaki **Arşivlenen görevler**
 açılınca listelenir, **Geri al** ile Bitti sütununa döner.

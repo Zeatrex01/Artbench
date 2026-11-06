@@ -2,11 +2,11 @@
 // kept, restorable). All writes go through /api/tasks.
 import { api } from './api.js';
 import { icon } from './icons.js';
-import { $, $$, esc, fmtDate, fmtDateTime, toast, modal, emptyState } from './ui.js';
+import { $, $$, esc, fmtDate, fmtDateTime, fmtStamp, toast, modal, emptyState, prefs } from './ui.js';
 import { thumbHTML } from './thumbs.js';
-import { S, TASK_NEXT, TASK_NEXT_LABEL, actions, findEntry, isProject } from './state.js';
+import { S, KIND, TASK_NEXT, TASK_NEXT_LABEL, actions, findEntry, isProject } from './state.js';
 import { t as tr } from './i18n.js';
-import { kindIcon } from './catalog.js';
+import { kindIcon, rowVisual } from './catalog.js';
 
 const COLS = [['todo', 'tasks.col.todo', 'dim'], ['doing', 'tasks.col.doing', 'warn'], ['done', 'tasks.col.done', 'ok']];
 export const PRIORITIES = ['high', 'normal', 'low'];
@@ -55,13 +55,39 @@ export function bindTaskMinis(el) {
   });
 }
 
+const CHANGE_WORD = { ADDED: 'change.added', CHANGED: 'change.changed', REMOVED: 'change.removed', MOVED: 'change.moved' };
+const richCards = () => prefs.get('taskCards', 'rich') === 'rich';
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+
+/** What the detailed card says about its asset: a large preview, its name and kind, open in Blender right now, when
+ * its file last changed, its revision note (the board's `live`, from /api/tasks). */
+function assetBlock(t, a) {
+  const live = t.live || {}, name = a?.name || t.asset.split('/').pop();
+  const visual = isProject() ? (a ? rowVisual(a) : kindIcon('other')) : thumbHTML(a?.path || a?.engine_path || '', 'sq');
+  const lines = [
+    live.blender ? `<div class="lv now"><span class="dot ok live"></span>${tr('tasks.liveBlender')}<span class="mono">${esc(live.blender)}</span></div>` : '',
+    live.changed ? `<div class="lv">${icon('diff')}${tr('tasks.liveChanged', { what: cap(tr(CHANGE_WORD[live.changed.what] || 'change.changed')), time: fmtStamp(live.changed.time) })}</div>` : '',
+    live.revision != null ? `<div class="lv rev">${icon('flag')}${live.revision ? esc(live.revision) : tr('marks.revisionComing')}</div>` : '',
+  ].join('');
+  return `<div class="tasset" data-task-asset title="${esc(t.asset)}"><div class="tvis">${visual}</div><div class="tinfo">
+    <div class="aname"><b>${esc(name)}</b><span>${esc(KIND[a?.kind]?.label || '')}</span></div>${lines}</div></div>`;
+}
+
 function card(t) {
   const a = t.asset ? findEntry(t.asset) : null;
+  if (richCards() && t.asset) return richCard(t, a);
   const visual = isProject() ? kindIcon(a?.kind || 'other', 'xs') : thumbHTML(a?.path || a?.engine_path || '');
   const chip = t.asset ? `<span class="assetchip" data-task-asset title="${esc(t.asset)}">${visual}<span class="ellip">${esc(a?.name || t.asset.split('/').pop())}</span></span>` : '';
   const when = t.status === 'done' && t.done ? tr('tasks.doneAt', { date: fmtDate(t.done) }) : fmtDate(t.created);
   return `<div class="task ${t.status} prio-${prioOf(t)}" data-task="${t.id}" data-priority="${prioOf(t)}"><div class="thead">${prioMark(t)}<div class="t">${esc(t.title)}</div></div>${t.note ? `<div class="n">${esc(t.note)}</div>` : ''}
     <div class="foot">${chip}<span>${when}</span><button class="btn sm" data-task-next>${TASK_NEXT_LABEL[t.status]}</button>${t.status === 'done' ? `<button class="btn ghost icon sm" data-task-arch title="${tr('tasks.archive')}">${icon('inbox')}</button>` : ''}<button class="btn ghost icon sm" data-task-del title="${tr('ui.delete')}">${icon('trash')}</button></div></div>`;
+}
+
+function richCard(t, a) {
+  const when = t.status === 'done' && t.done ? tr('tasks.doneAt', { date: fmtDate(t.done) }) : fmtDate(t.created);
+  return `<div class="task rich ${t.status} prio-${prioOf(t)} ${t.live?.blender ? 'working' : ''}" data-task="${t.id}" data-priority="${prioOf(t)}"><div class="thead">${prioMark(t)}<div class="t">${esc(t.title)}</div></div>
+    ${assetBlock(t, a)}${t.note ? `<div class="n">${esc(t.note)}</div>` : ''}
+    <div class="foot"><span>${when}</span><button class="btn sm" data-task-next>${TASK_NEXT_LABEL[t.status]}</button>${t.status === 'done' ? `<button class="btn ghost icon sm" data-task-arch title="${tr('tasks.archive')}">${icon('inbox')}</button>` : ''}<button class="btn ghost icon sm" data-task-del title="${tr('ui.delete')}">${icon('trash')}</button></div></div>`;
 }
 
 export function viewTasks() {
@@ -80,7 +106,8 @@ export function viewTasks() {
     const archAll = k === 'done' && list.length ? `<button class="btn ghost sm" id="taskArchAll" title="${tr('tasks.archiveAllTitle')}">${icon('inbox')}${tr('tasks.archiveAll')}</button>` : '';
     return `<div class="kcol"><div class="khead"><span class="dot ${cls}"></span><b>${tr(label)}</b>${archAll}<span class="n">${list.length}</span></div>${list.map(card).join('') || `<div class="dim" style="font-size:12px;padding:6px 4px">${tr('tasks.colEmpty')}</div>`}</div>`;
   }).join('');
-  return add + `<div class="kanban">${cols}</div>` + archiveSection() + fromBlender();
+  const mode = `<div class="row taskmode"><div class="seg"><button class="${richCards() ? 'on' : ''}" data-tcards="rich">${tr('tasks.cardsRich')}</button><button class="${richCards() ? '' : 'on'}" data-tcards="plain">${tr('tasks.cardsPlain')}</button></div></div>`;
+  return add + mode + `<div class="kanban">${cols}</div>` + archiveSection() + fromBlender();
 }
 
 /** Notes artists wrote in Blender: they live in each .blend and come here as a copy when the add-on sends them, so
@@ -108,6 +135,7 @@ export function bindTasks(el) {
     await after(); toast(tr('tasks.added'), 'ok'); $('#taskTitle')?.focus();
   };
   $('#taskAdd', el).onclick = add; title.onkeydown = ev => { if (ev.key === 'Enter') add(); };
+  $$('[data-tcards]', el).forEach(b => b.onclick = () => { prefs.set('taskCards', b.dataset.tcards); actions.renderView(); });
   const archAll = $('#taskArchAll', el);
   if (archAll) archAll.onclick = () => taskOp({ op: 'archive_done' }).then(r => { if (r) toast(tr('tasks.archivedN', { n: r.archived }), 'ok'); S.taskArchive = null; return after(); });
   $('#taskArchToggle', el).onclick = async () => { S.taskArchiveOpen = !S.taskArchiveOpen; if (S.taskArchiveOpen) await loadArchive(); actions.renderView(); };
