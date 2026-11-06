@@ -61,7 +61,9 @@ gösterir (çalışırken nokta yanıp söner). Tıklayınca son çağrılar lis
 (yalnızca ekrandaki satırlar) ya da Kapalı; görseller (png, jpg) her zaman görünür. **Model ölçümü** (üçgen, vertex,
 materyal): **Kart açılınca** (varsayılan, yalnızca açtığın model ölçülür), **Hepsi, arka planda** (bütün modeller
 sırayla ölçülür, büyük projede Blender uzun süre çalışır) ya da Kapalı. Daha önce ölçülmüş modellerin sayıları her
-ayarda görünür. Üçgen sütunu, `tris:` araması ve üçgen bütçesi yalnızca ölçülmüş modelleri sayar.
+ayarda görünür. Üçgen sütunu, `tris:` araması ve üçgen bütçesi yalnızca ölçülmüş modelleri sayar. **Yeniden tarama**:
+pencere öndeyken sayfanın projeyi ne sıklıkla yeniden okuduğu (15 sn varsayılan; 5 sn, dakikada bir ya da yalnızca
+yenile düğmesiyle). Görevler, "Blender'da açık" ve AI satırı taramadan bağımsız, 5 sn'de bir hafifçe güncellenir.
 
 **Arşivle**: hiçbir şeyin kullanmadığı Unity varlıklarını seçip alttaki çubuktan (ya da kartından) **Arşivle…** de.
 Dosya `.meta`'sıyla birlikte oyun projesinin dışına, arşive taşınır; silinmez. Bir prefab ya da materyalin kullandığı

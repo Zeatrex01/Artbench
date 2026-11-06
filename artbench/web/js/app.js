@@ -19,8 +19,11 @@ import { viewMarked, bindMarked, bindPicks, renderPickBar } from './marks.js';
 import { openProjects, closeProjects, isProjectsOpen } from './projects.js';
 import { playLaunch } from './launch.js';
 
-const POLL_MS = 4000;
-const BACKGROUND_MS = 30000;
+const PULSE_MS = 5000;        // the light look (tasks, open in Blender, the AI line) while the window is in front
+const BACKGROUND_PULSE_MS = 30000;
+const BACKGROUND_FULL_MS = 60000;   // the project rescan behind other windows: never more often than this
+/** Seconds between project rescans, the project's setting (Projects screen): 5, 15 (default), 60, or 0 by hand. */
+const refreshSeconds = () => { const p = (S.projects || []).find(x => x.id === S.project); return p && p.refresh != null ? p.refresh : 15; };
 const ALIVE_MS = 60000;      // the app window's server stops after a quiet spell; an open page keeps it alive
 
 async function loadProjects() {
@@ -29,6 +32,21 @@ async function loadProjects() {
   if (!usable.find(p => p.id === S.project)) S.project = usable[0]?.id || null;
   prefs.set('project', S.project);
   if (!S.project) openProjects(); else render();            // 'Scanning…' until the first state arrives
+}
+
+/** The light look between rescans: the board and the AI line, no scan. */
+async function pulse() {
+  if (!S.project || S.busy || !S.data) return;
+  const project = S.project;
+  try {
+    const p = await api.get('/api/pulse', { project });
+    if (project !== S.project || S.busy) return;
+    S.data.ai_activity = p.ai_activity;
+    const h = hashOf(p.tasks);
+    if (h === S.hashes.tasks) { renderStamps(); return; }
+    S.tasks = p.tasks; S.hashes.tasks = h;
+    if (!document.activeElement?.closest('#view, #inspector')) render(); else renderStamps();
+  } catch { /* the next rescan says so */ }
 }
 
 async function refresh(force = false) {
@@ -135,15 +153,18 @@ document.addEventListener('keydown', e => {
   api.get('/api/alive').then(a => { S.about = a; if (S.data) renderSidebar(); }, () => {});   // the version and the signature
   try { await loadProjects(); } catch (e) { toast(t('app.serverUnreachable', { msg: e.message })); }
   if (S.project) await refresh();
-  // In front: every 4 s. Open behind other windows (kept open for AI tools): about every 30 s. Minimised: never.
-  // Coming back to the window refreshes at once.
-  let lastPoll = 0;
-  const poll = () => { lastPoll = Date.now(); refresh(); };
+  // In front: the light look every 5 s, the project rescan as the project's setting says (15 s unless set; 0: only the
+  // refresh button). Open behind other windows (kept open for AI tools): the light look every 30 s, a rescan at most
+  // once a minute. Minimised: nothing. Coming back to the window rescans at once.
+  let lastFull = Date.now(), lastPulse = Date.now();
+  const full = () => { lastFull = lastPulse = Date.now(); refresh(); };
   setInterval(() => {
     if (document.hidden || isProjectsOpen()) return;
-    if (!document.hasFocus() && Date.now() - lastPoll < BACKGROUND_MS) return;
-    poll();
-  }, POLL_MS);
-  addEventListener('focus', () => { if (!document.hidden && !isProjectsOpen()) poll(); });
+    const front = document.hasFocus(), secs = refreshSeconds(), now = Date.now();
+    const fullEvery = secs ? (front ? secs * 1000 : Math.max(secs * 1000, BACKGROUND_FULL_MS)) : Infinity;
+    if (now - lastFull >= fullEvery) full();
+    else if (now - lastPulse >= (front ? PULSE_MS : BACKGROUND_PULSE_MS)) { lastPulse = now; pulse(); }
+  }, 1000);
+  addEventListener('focus', () => { if (!document.hidden && !isProjectsOpen()) full(); });
   setInterval(() => { api.get('/api/alive').catch(() => {}); }, ALIVE_MS);     // also while hidden or minimised
 })();

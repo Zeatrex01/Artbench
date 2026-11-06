@@ -227,7 +227,7 @@ A model's own textures sit beside it and travel with it when it is the last mode
 naming the supported ones), `engine_root`,
 `art_root`, `states`, `blend_root`, `textures_root`, `categories`, `model_extensions`, `texture_extensions`,
 `blend_extensions`, `ignore`, `engine_ignore`, optional `engine_assets_root`, `engine_ignore_dump`,
-`layout_rules`, `layout_enabled`, `layout_ignore`, `blender`, `github_account` (optional: the GitHub account this project pushes as; set from the Projects screen or `setup --github`, each change a `GITHUB` history line), `engine_targets` (category -> engine folder for first sends), `previews` (visible | off: model previews by background Blender; images always show) and `model_stats` (background: every unmeasured model is queued at each scan | on_open, the default: only the model whose card opens, ahead of previews | off: none; a cached measurement always shows), both set from the project card on the Projects screen through `performance_settings` (PAGE_ONLY, a PERFORMANCE history line), `standards` (the checks' rules over `checks.DEFAULTS`; each change a `STANDARDS` history line), `export_presets`, `character`,
+`layout_rules`, `layout_enabled`, `layout_ignore`, `blender`, `github_account` (optional: the GitHub account this project pushes as; set from the Projects screen or `setup --github`, each change a `GITHUB` history line), `engine_targets` (category -> engine folder for first sends), `previews` (visible | off: model previews by background Blender; images always show) and `model_stats` (background: every unmeasured model is queued at each scan | on_open, the default: only the model whose card opens, ahead of previews | off: none; a cached measurement always shows), and `refresh` (seconds between the page's rescans while its window is in front: 5, 15 the default, 60, or 0 by hand; behind other windows at most once a minute), all set from the project card on the Projects screen through `performance_settings` (PAGE_ONLY, a PERFORMANCE history line), `standards` (the checks' rules over `checks.DEFAULTS`; each change a `STANDARDS` history line), `export_presets`, `character`,
 `bridge_fresh_seconds` (how long a live scene report counts, default 600), `report_limits` (over
 `live.DEFAULT_LIMITS` {`scenes`: 200, `nodes`: 200000, `uses`: 1000000} per engine report; any other key or a
 value that is not a whole number of 0 or more is a config error, `unavailable`),
@@ -695,6 +695,11 @@ paths that no longer exist at the first save of a run. Rendered previews (`.cach
 served preview's mtime notes its use, at most once a day); they are rebuilt on demand. Model measurements
 (`.cache/meta`) are never trimmed: a change's before/after needs the old content's. A project on an unplugged drive
 loses its cache entries and is read in full on its next scan; nothing else is lost.
+
+**The page's two clocks.** A rescan (GET /api/state with the history, the change feed, the engine status, the
+GitHub line and the Blender notes) runs as the project's `refresh` says and when the window comes back to the front.
+Between rescans a light look (GET /api/pulse: the board with its live lines and the AI line; it never scans) runs
+every 5 s in front and every 30 s behind other windows. A minimised window does neither.
 
 **Detailed task cards.** The page's GET /api/tasks gives each task tied to an asset `live` (`ops.page._live`; the
 AI's `tasks` op has none): `changed` {time, what} (the asset's newest change-feed entry, `changes.latest_for`, one pass

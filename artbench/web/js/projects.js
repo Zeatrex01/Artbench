@@ -45,7 +45,7 @@ function projectCard(p) {
 function perfRow(p) {
   const sel = (key, values) => `<label class="perf"><span>${t('perf.' + key)}</span><select data-perf="${key}" data-pid="${esc(p.id)}" title="${t('perf.' + key + 'Hint')}">
     ${values.map(v => `<option value="${v}" ${p[key] === v ? 'selected' : ''}>${t('perf.' + key + '.' + v)}</option>`).join('')}</select></label>`;
-  return `<div class="prow perfrow">${sel('previews', ['visible', 'off'])}${sel('model_stats', ['on_open', 'background', 'off'])}</div>`;
+  return `<div class="prow perfrow">${sel('previews', ['visible', 'off'])}${sel('model_stats', ['on_open', 'background', 'off'])}${sel('refresh', [15, 5, 60, 0])}</div>`;
 }
 
 /** The connect area: the Unity project folder first, then the two ways to connect it. */
@@ -260,7 +260,8 @@ function bind(el) {
   $$('[data-popen]', el).forEach(b => b.onclick = () => { actions.switchProject(b.dataset.popen); closeProjects(); });
   $$('[data-perf]', el).forEach(s => s.onchange = async () => {
     try {
-      await api.post('/api/v1/performance_settings', { project: s.dataset.pid, [s.dataset.perf]: s.value });
+      const value = s.dataset.perf === 'refresh' ? Number(s.value) : s.value;
+      await api.post('/api/v1/performance_settings', { project: s.dataset.pid, [s.dataset.perf]: value });
       toast(t('perf.saved'), 'ok');
       await actions.loadProjects();
       if (s.dataset.pid === S.project) actions.refresh(true);

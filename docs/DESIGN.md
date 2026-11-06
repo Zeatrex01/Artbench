@@ -111,8 +111,9 @@ animator bad, data muted.
   figures (files with copies, the space the copies take), then one group per file with each copy, its usage and
   what uses it. The rules card: largest texture (a select), triangle budget, four checkboxes, name prefixes while
   naming is on, Save rules. Nothing on the page changes a file of the game project.
-- **Polling**: every 4 s while the window is in front; about every 30 s while it is open behind other windows (kept
-  open for AI tools); never while minimised. Coming back to the window refreshes at once.
+- **Polling**: in front, the light look (tasks, open in Blender, the AI line) every 5 s and a rescan as the project
+  sets it (15 s by default); behind other windows (kept open for AI tools) the light look every 30 s and a rescan at
+  most once a minute; never while minimised. Coming back to the window rescans at once.
 - **Main**: topbar (view title + count, search with `/` hint, grid/list toggle, refresh), scrolling view.
 - **Inspector 380px**: appears when something is selected, slides in; overlays below 1250px.
 - **Projects screen**: a full-screen hub, shown on first run, from the sidebar's **Connect a project** button (under the

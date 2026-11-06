@@ -73,6 +73,12 @@ def reference_graph(cfg):
     return graph.build(cfg, engines.dump(cfg), scan.scan(cfg)["items"])
 
 
+def pulse(cfg):
+    """The page's light look between rescans: the board (with its live lines) and what the AI did. Reads a few small
+    files; never scans the project."""
+    return {"tasks": task_list(cfg), "ai_activity": mcp_link.recent(15)}
+
+
 def task_list(cfg, archived=False):
     """The board; its tasks tied to an asset carry `live` (see _live) for the detailed cards. The AI's `tasks` op
     has none of it."""

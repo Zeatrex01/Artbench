@@ -126,6 +126,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(page.projects())
             elif u.path == "/api/projects/github":
                 self._json(github_link.github_status(page.project(q["project"][0])))
+            elif u.path == "/api/pulse":
+                self._json(page.pulse(page.project(q["project"][0])))
             elif u.path == "/api/state":
                 with _lock:
                     self._json(page.state(page.project(q["project"][0])))

@@ -9,6 +9,7 @@ from . import blender_jobs, store
 
 PREVIEWS = ("visible", "off")
 MODEL_STATS = ("background", "on_open", "off")
+REFRESH = (5, 15, 60, 0)          # seconds between the page's project rescans; 0: only when asked
 SNAPSHOT_VERSION = 1
 META_SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "model_meta.py")
 CACHE_KIND = "meta"
@@ -68,27 +69,31 @@ def stats_of(snap):
 
 
 def performance(cfg):
-    """{previews, model_stats}: how much background Blender work the project asks for (config, DEFAULTS)."""
-    previews, stats = cfg.get("previews"), cfg.get("model_stats")
+    """{previews, model_stats, refresh}: how much background work the project asks for: Blender previews and
+    measuring, and how often the page rescans it (config, DEFAULTS)."""
+    previews, stats, refresh = cfg.get("previews"), cfg.get("model_stats"), cfg.get("refresh")
     return {"previews": previews if previews in PREVIEWS else "visible",
-            "model_stats": stats if stats in MODEL_STATS else "on_open"}
+            "model_stats": stats if stats in MODEL_STATS else "on_open",
+            "refresh": refresh if refresh in REFRESH and not isinstance(refresh, bool) else 15}
 
 
-def set_performance(cfg, previews=None, model_stats=None):
+def set_performance(cfg, previews=None, model_stats=None, refresh=None):
     """Writes the given settings into the project config (None leaves one as it is); a PERFORMANCE history line."""
     if previews is not None and previews not in PREVIEWS:
         raise ValueError(f"previews is one of {', '.join(PREVIEWS)}")
     if model_stats is not None and model_stats not in MODEL_STATS:
         raise ValueError(f"model_stats is one of {', '.join(MODEL_STATS)}")
+    if refresh is not None and (refresh not in REFRESH or isinstance(refresh, bool)):
+        raise ValueError(f"refresh is one of {', '.join(map(str, REFRESH))} seconds (0: only when asked)")
     raw = store._read_json(cfg["config_path"], {})
     raw = raw if isinstance(raw, dict) else {}
-    for key, value in (("previews", previews), ("model_stats", model_stats)):
+    for key, value in (("previews", previews), ("model_stats", model_stats), ("refresh", refresh)):
         if value is not None:
             raw[key] = value
     store._write_json(cfg["config_path"], raw)
     out = performance({**cfg, **raw})
     with store.locked(cfg):
-        store.log(cfg, "PERFORMANCE", f"previews={out['previews']}", f"model_stats={out['model_stats']}")
+        store.log(cfg, "PERFORMANCE", f"previews={out['previews']}", f"model_stats={out['model_stats']}", f"refresh={out['refresh']}")
     return out
 
 

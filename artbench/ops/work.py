@@ -112,6 +112,7 @@ def op_asset_history(args):
 def op_performance_settings(args):
     """How much background Blender work the project asks for; previews and model_stats change it."""
     cfg = _cfg(args["project"])
-    if args.get("previews") is None and args.get("model_stats") is None:
+    if all(args.get(k) is None for k in ("previews", "model_stats", "refresh")):
         return asset_meta.performance(cfg)
-    return asset_meta.set_performance(cfg, previews=args.get("previews"), model_stats=args.get("model_stats"))
+    return asset_meta.set_performance(cfg, previews=args.get("previews"), model_stats=args.get("model_stats"),
+                                      refresh=args.get("refresh"))

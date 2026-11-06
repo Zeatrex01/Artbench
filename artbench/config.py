@@ -24,6 +24,7 @@ DEFAULTS = {
     "engine_texture_targets": {},                                # category -> engine folder for new textures (follow)
     "previews": "visible",                                       # model previews by background Blender: visible | off
     "model_stats": "on_open",                                    # model measuring: background (all) | on_open | off
+    "refresh": 15,                                               # seconds between the page's rescans: 5 | 15 | 60 | 0 (by hand)
     "bridge_fresh_seconds": 600,                                # a live scene report counts this long
     "report_limits": {},                                        # over live.DEFAULT_LIMITS: scenes, nodes, uses
     "blend_extensions": [".blend"],
