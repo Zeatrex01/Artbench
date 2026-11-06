@@ -6,7 +6,7 @@ import { api } from './api.js';
 import { icon } from './icons.js';
 import { t } from './i18n.js';
 import { $, $$, esc, emptyState, callout, fmtTime } from './ui.js';
-import { S, KIND, SYNC, actions, isProject } from './state.js';
+import { S, KIND, SYNC, actions, isProject, underPrefix, enginePrefix } from './state.js';
 import { KIND_ORDER, kindIcon, rowVisual } from './catalog.js';
 
 let loading = false;
@@ -30,7 +30,7 @@ export async function loadScenes() {
 }
 
 const name = path => path.split('/').pop();
-const folder = path => path.replace(/^Assets\//, '').replace(/\/?[^/]+$/, '');
+const folder = path => underPrefix(path).replace(/\/?[^/]+$/, '');
 const kindRank = k => { const i = KIND_ORDER.indexOf(k); return i < 0 ? KIND_ORDER.length : i; };
 
 function row(u) {
@@ -69,7 +69,7 @@ export function viewScenes() {
   const sel = S.scenes.find(s => s.path === S.scene) || S.scenes[0];
   const q = (S.sceneQuery || '').toLowerCase();
   const items = S.scenes.map(s => `<button class="scn-item ${s === sel ? 'on' : ''}" data-scene="${esc(s.path)}" title="${esc(s.path)}" ${q && !s.path.toLowerCase().includes(q) ? 'hidden' : ''}>
-      ${kindIcon('scene')}<span class="scn-txt"><b>${esc(name(s.path))}</b><span>${esc(folder(s.path) || 'Assets')}</span></span>
+      ${kindIcon('scene')}<span class="scn-txt"><b>${esc(name(s.path))}</b><span>${esc(folder(s.path) || enginePrefix().replace(/[:/]+$/, ''))}</span></span>
       <span class="scn-n">${s.uses.length}</span>${s.source === 'live' ? `<span class="dot ok" title="${esc(t('scenes.liveTitle'))}"></span>` : ''}${s.dirty ? `<span class="dot warn" title="${esc(t('scenes.dirty'))}"></span>` : ''}</button>`).join('');
   return head + `<div class="scn"><aside class="scn-list"><div class="scn-filter">${icon('search')}<input type="text" id="scnFilter" placeholder="${t('scenes.filter')}" value="${esc(S.sceneQuery || '')}" spellcheck="false"></div>
       <div class="scn-items">${items}</div></aside>

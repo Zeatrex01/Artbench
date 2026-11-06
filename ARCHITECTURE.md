@@ -62,9 +62,11 @@ scan.py             analysis: desktop art folder + engine dump -> inventory stat
 catalog.py          analysis (project mode): every engine asset of the catalog kinds with usage (the adapter decides
                     used / unreferenced / by_name / unknown), used_by, uses, size; query filters and pages
 --------------------------------------------------------------------------------------------
-engines/            engine adapters: base.py (the interface), unity.py (Unity; wraps unity_dump.py), chosen by
+engines/            engine adapters: base.py (the interface), unity.py (Unity; wraps unity_dump.py), godot.py (Godot 4;
+                    wraps godot_dump.py), chosen by
                     config `engine` through engines.of(cfg); every caller uses engines.dump / unreachable
 unity_dump.py       Unity Assets folder -> asset dump (guid, path, kind, referrers); used only by engines/unity.py
+godot_dump.py       Godot project folder -> the same dump shape (uid, path, kind, referrers); used only by engines/godot.py
 blender_jobs.py     one background Blender worker: priority queue (snapshots before thumbnails, newest request first
                     within a priority), content-hash cache under Artbench/.cache/<kind>/, atomic outputs; Blender is
                     kept open between jobs (RUNNER_EXPR: one JSON job per stdin line; restarted after 200 jobs, a crash
@@ -105,7 +107,7 @@ These hold on the real import graph: an import inside a function counts like one
    and `app_window`, and each other** (`__main__` starts `cli` or `server`). Connecting a project, the GitHub
    account and the AI connection are setup, not program operations; `app_window` is the server's own start (its
    window and when it stops) and the native folder dialog, not domain logic.
-4. **Only `engines/unity.py` imports `unity_dump`.**
+4. **Only `engines/unity.py` imports `unity_dump`, only `engines/godot.py` imports `godot_dump`.**
 5. **No import cycles.**
 6. **No local hides an imported module.** A function that binds a name the module imports as a module
    (`files = [...]` in a module that calls `files.sha`) fails the test. Inside that function the local would win.
@@ -168,9 +170,9 @@ Rules between layers:
 `engines.of(cfg)` returns the adapter named by config `engine` (default `"unity"`); a name Artbench does not support
 raises `errors.Unavailable` ("engine not supported: <name>", HTTP 503 / `unavailable`). `workspace.check_engine` asks
 every adapter's `detect` when a project is connected. The interface (`engines/base.py`) carries only what the code
-uses, shaped so Godot fits without breaking it:
+uses; Unity and Godot (`engines/godot.py`) implement it:
 
-| Method / attribute | Unity (`engines/unity.py`) | Godot (planned, shape check) |
+| Method / attribute | Unity (`engines/unity.py`) | Godot (`engines/godot.py`) |
 |---|---|---|
 | `name` | `"unity"` | `"godot"` |
 | `prefix` | `"Assets/"` | `"res://"` |
@@ -183,11 +185,11 @@ uses, shaped so Godot fits without breaking it:
 | `to_engine_path(cfg, abs)` / `from_engine_path(cfg, value)` | absolute path <-> `Assets/...`; `from` resolves what a caller joined (`//`, `.`, `..`) and refuses a path leaving `Assets/` | absolute path <-> `res://...` |
 | `sidecars(path)` | `[path + ".meta"]` (kept on send) | `[path + ".import"]` |
 | `import_settings(path)` | read only, from the asset's `.meta` (first value of each key, the default platform): texture `{importer, max_size, compressed, mipmaps, readable}`, model `{importer, readable}`; `{}` when unknown | the `.import` file |
-| `build_dump(cfg, force)` | `unity_dump` + the dump cache, rebuilt when older than `engines.base.DUMP_MAX_AGE` (60 s), forced, or older than the stale stamp (`dump_stale_since`) | planned |
-| `lookup(dump)` | helpers: path -> guid, path -> referrers | planned |
-| `layout_defaults` | Unity's folder rules (`engines/unity.py`), used when a project has no `layout_rules` | planned |
-| `kind_of(path)` | asset kind by extension (`unity_dump.KIND_BY_EXT`), else `"other"` | planned |
-| `dump_ignore(project_mode=False)` | `unity_dump.DEFAULT_IGNORE`; project mode keeps `StreamingAssets` (loaded by name, listed) | planned |
+| `build_dump(cfg, force)` | `unity_dump` + the dump cache, rebuilt when older than `engines.base.DUMP_MAX_AGE` (60 s), forced, or older than the stale stamp (`dump_stale_since`) | `godot_dump` (reads kept in memory), same rebuild rule |
+| `lookup(dump)` | helpers: path -> guid, path -> referrers | the same, by uid |
+| `layout_defaults` | Unity's folder rules (`engines/unity.py`), used when a project has no `layout_rules` | none: Godot has no folder convention, Layout learns the project's own |
+| `kind_of(path)` | asset kind by extension (`unity_dump.KIND_BY_EXT`), else `"other"` | `godot_dump.KIND_BY_EXT`, else `"other"` |
+| `dump_ignore(project_mode=False)` | `unity_dump.DEFAULT_IGNORE`; project mode keeps `StreamingAssets` (loaded by name, listed) | `addons` (read for references only) |
 | `mark_dump_stale(cfg, when)` / `dump_stale_since(cfg)` | base class: `engine_index_stale.json` `{since}` beside the dump in the data folder, so every process sees it | (base) |
 
 `engines.dump` and `engines.unreachable` are the calls every module uses for the engine side.
@@ -676,7 +678,7 @@ Blender add-on (the link, and notes kept in the `.blend`).
 Next, in this order:
 1. A canvas for tasks and for comparing art side by side.
 2. A Blender MCP that works with or without Artbench: the scene, its changes, export templates per project.
-3. Godot (an adapter producing the dump shape, see Extension points).
+3. More of Godot: a live bridge from the Godot editor (the adapter reads files only for now).
 
 **Marks and export** (what an everyday asset tool has). `mark` op (ids, favorite?, revision?, note?, tags_add?,
 tags_remove?) and `marks` list (filter favorite | revision, tag?, revision first); overview counts them (with
@@ -706,6 +708,20 @@ AI's `tasks` op has none): `changed` {time, what} (the asset's newest change-fee
 over the latest 5000 lines), `blender` (the open .blend's name when it is this asset's: the file itself, a model bound
 to it, or a model of the same stem; from the add-on's report, `blender_link.status`), `revision` (its revision note).
 The board's Detailed cards show the asset's preview, name and kind, then those lines; Compact keeps the small card.
+
+**Godot** (`engines/godot.py`, `godot_dump.py`). A project is a folder with project.godot; the content root is the
+project folder, paths are `res://...` and ids `engine:<path under the project>`. The dump is read from text files, no
+Godot running: an asset's id is its uid (from its `.import` file, its `.uid` file for scripts and shaders, or the
+header of a scene / resource; none: `path:<path>`); references are the `"res://..."` and `"uid://..."` strings in
+scenes (.tscn), resources (.tres), scripts (.gd, .cs), shaders and project.godot, and in an `.import` file (a model's
+external materials). Kinds: a scene another scene instances is a prefab, any other scene a scene; a .tres is a
+material, clip, animator, mesh, atlas or shader by its type. Used: referenced, the main scene, or named by
+project.godot (autoloads, the icon); a path a script builds at run time cannot be seen, so check before deleting.
+Sidecars (`.import`, `.uid`) travel with an asset (archive, send), and a change to an `.import` is a change. Import
+settings for the standards come from the `.import` file (compress/mode, mipmaps, process/size_limit); Read/Write has
+no Godot setting, so that rule stays quiet. `hidden folders` are `res://<path>` entries; `.godot/` and folders with a
+`.gdignore` are never read. Not yet: a live bridge from the Godot editor; the doctor's Unity checks (Force Text,
+Addressables) report ok / skip.
 
 **Task archive.** A finished task can be archived (`tasks.archive`, `archive_done`, `restore`): it gets `archived`
 (a time) and leaves the board, the asset cards and the counts, but stays in tasks.json; `tasks.load(cfg,

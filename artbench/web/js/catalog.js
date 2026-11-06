@@ -4,7 +4,7 @@ import { api } from './api.js';
 import { icon } from './icons.js';
 import { t } from './i18n.js';
 import { $, $$, esc, fmtCount, fmtSize, prefs, emptyState, callout, toast } from './ui.js';
-import { S, KIND, actions, enginePathAbs } from './state.js';
+import { S, KIND, actions, enginePathAbs, enginePrefix, underPrefix, engineLabel } from './state.js';
 import { groupHead } from './library.js';
 import { assetHistorySection } from './views.js';
 import { thumbHTML } from './thumbs.js';
@@ -15,9 +15,9 @@ export const USAGE_CLS = { used: 'ok', unreferenced: 'warn', by_name: 'info', un
 const USAGE_ORDER = ['used', 'unreferenced', 'by_name', 'unknown'];
 
 export const catalogAssets = () => S.data?.catalog?.assets || [];
-const relOf = path => path.replace(/^Assets\//, '');
+const relOf = underPrefix;
 /** Absolute path of a project path: Assets/... under the Assets folder, anything else (ProjectSettings/...) beside it. */
-const projectPathAbs = path => (path.startsWith('Assets/') ? enginePathAbs(relOf(path))
+const projectPathAbs = path => (path.startsWith(enginePrefix()) ? enginePathAbs(relOf(path))
   : S.assetsRoot ? S.assetsRoot.replace(/\/Assets$/, '') + '/' + path : path);
 const inFolder = (a, folder) => a.folder === folder || a.folder.startsWith(folder + '/');
 
@@ -91,7 +91,7 @@ function downloadCsv() {
 export const kindIcon = (kind, cls = '') => `<span class="kicon ${cls}" style="--c:${KIND[kind]?.color || KIND.other.color}">${icon(KIND[kind]?.icon || 'box')}</span>`;
 /** Models show their Blender render, textures the image itself; other kinds keep their icon. */
 const PREVIEW_KINDS = new Set(['model', 'texture']);
-const hasPreview = a => PREVIEW_KINDS.has(a.kind) && a.path?.startsWith('Assets/');
+const hasPreview = a => PREVIEW_KINDS.has(a.kind) && a.path?.startsWith(enginePrefix());
 const preview = (a, cls) => thumbHTML(enginePathAbs(relOf(a.path)), `${cls} ${a.kind === 'texture' ? 'tex' : ''}`);
 export const rowVisual = a => (hasPreview(a) ? preview(a, 'sq') : kindIcon(a.kind));
 /** Model statistics: "1,234 tris" for a row, the full line for the card; "measuring…" while Blender reads it. */
@@ -284,7 +284,7 @@ export function assetCard(e, { pathRow, taskMini }) {
     <div class="chips">${e.usage ? `<span class="chip ${USAGE_CLS[e.usage] || 'dim'}">${t('usage.' + e.usage)}</span>` : ''}${e.in_build === true ? `<span class="chip accent nodot">${t('ins.inBuild')}</span>` : e.in_build === false ? `<span class="chip dim nodot">${t('ins.notInBuild')}</span>` : ''}</div>
     ${e.usage ? callout(USAGE_CLS[e.usage] === 'dim' ? 'info' : USAGE_CLS[e.usage], t('usage.explain.' + e.usage)) : ''}
     ${markSection(e)}${assetHistorySection(e.id)}
-    ${e.path ? pathRow(t('ins.unity'), e.path) : e.engine_path ? pathRow(t('ins.unity'), e.engine_path) : ''}
+    ${e.path ? pathRow(engineLabel(), e.path) : e.engine_path ? pathRow(engineLabel(), e.engine_path) : ''}
     <div class="sec"><span class="label">${t('ins.usedBy')} <span class="n">${usedByN}</span></span>${refs(usedBy, usedByN, t('ins.usedByNone'), failed)}</div>
     ${isCatalog ? `<div class="sec"><span class="label">${t('ins.uses')} <span class="n">${e.uses_count}</span></span>${refs(uses, e.uses_count, t('ins.usesNone'), failed)}</div>` : ''}
     <div class="sec"><span class="label">${t('ins.tasks')} <span class="n">${myTasks.length}</span></span>${myTasks.map(taskMini).join('')}

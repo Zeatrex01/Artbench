@@ -67,7 +67,7 @@ async function refresh(force = false) {
     S.engineStatus = bridge;
     S.github = github;
     const sinceSeen = data.since_seen || [];               // project mode: what came after the last Mark as seen
-    S.assetsRoot = assetsRootOf(data.engine_root);
+    S.assetsRoot = data.engine_content_root ? data.engine_content_root.replace(/\\/g, '/') : assetsRootOf(data.engine_root);
     const h = { github: hashOf(github), data: hashOf([data.items, data.engine_only, data.placeholders, data.blends, data.unsorted, data.layout_issues, data.states, data.catalog]), tasks: hashOf(tasks), notes: hashOf(blenderNotes), history: hashOf(history), changes: hashOf(changes), seen: hashOf(sinceSeen) };
     const changed = Object.keys(h).some(k => h[k] !== S.hashes[k]);
     if (h.data !== S.hashes.data) { resetMeta(); S.checks = null; }   // files changed: compare again, check again

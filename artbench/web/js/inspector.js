@@ -5,7 +5,7 @@ import { icon } from './icons.js';
 import { t, locale } from './i18n.js';
 import { $, $$, esc, base, fmtDate, fmtDateTime, fmtStamp, fmtSize, toast, modal, callout } from './ui.js';
 import { thumbHTML, observeThumbs } from './thumbs.js';
-import { S, KIND, STATE_LABEL, SYNC, actions, findEntry, setOf, setLabel, chipsFor, enginePathAbs, relToAssets, isPlaceholder, engineUnreachable, syncOf, changedFiles, isProject } from './state.js';
+import { S, KIND, STATE_LABEL, SYNC, actions, findEntry, setOf, setLabel, chipsFor, enginePathAbs, relToAssets, engineLabel, isPlaceholder, engineUnreachable, syncOf, changedFiles, isProject } from './state.js';
 import { taskMini, bindTaskMinis, addTask } from './tasks.js';
 import { assetCard, bindAssetCard } from './catalog.js';
 import { bindMarkSection, markSection } from './marks.js';
@@ -46,7 +46,7 @@ export function renderInspector() {
     ${placeholder ? '' : thumbHTML(desktop ? e.path : e.engine_path, 'hero')}
     <div><h2>${esc(e.name)}</h2><div class="sub">${esc(sub)}</div><div class="chips">${chipsFor(e)}</div></div>
     ${desktop ? pathRow(t('ins.desktop'), e.path) : ''}
-    ${e.engine_path ? pathRow(t('ins.unity'), e.engine_path) : ''}
+    ${e.engine_path ? pathRow(engineLabel(), e.engine_path) : ''}
     ${markSection(e)}${assetHistorySection(e.id)}
     ${e.imported ? `<div class="muted imported" style="font-size:12px">${icon('inbox')} ${esc(t('ins.imported', { time: e.imported.time, from: e.imported.from }))}</div>` : ''}
     ${!desktop && !placeholder ? `<div class="sec bringin">${callout('info', t('bring.hint'))}<button class="btn primary" id="insBringIn">${icon('inbox')}${t('bring.button')}</button></div>` : ''}

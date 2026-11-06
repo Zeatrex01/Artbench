@@ -36,7 +36,7 @@ Free to use, change and share for your own work, with credit. Not for sale. See 
 
 ### Know what the game has, and what uses it
 
-Point Artbench at your clone of the Unity project, on any branch.
+Point Artbench at your clone of the Unity or Godot project, on any branch.
 
 - **The art catalog.** Models, textures, materials, prefabs, scenes, animations, shaders and audio, grouped by kind
   or by folder, with model renders, triangle counts, texture sizes and formats. Sort by size, triangles or last
@@ -162,10 +162,10 @@ No file is silently overwritten, on either side:
 
 ## Status
 
-Works today with Unity, on Windows and Linux (macOS is untested). Next, in this order:
+Works today with Unity and Godot 4 (read from the project's files, no editor needed), on Windows, Linux and macOS. Next, in this order:
 1. A canvas for tasks and for comparing art side by side.
 2. A Blender MCP that works with or without Artbench: the scene, its changes, export templates per project.
-3. Godot.
+3. A live link to the Godot editor.
 
 The team side comes after those. The roadmap is in [`ARCHITECTURE.md`](ARCHITECTURE.md#roadmap).
 

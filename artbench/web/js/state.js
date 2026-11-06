@@ -86,7 +86,17 @@ export function assetsRootOf(engineRoot) {
   return i >= 0 ? norm.slice(0, i + 7) : norm;
 }
 export const enginePathAbs = relToAssets => (S.assetsRoot ? S.assetsRoot + '/' + relToAssets : relToAssets);
-export function relToAssets(absPath) { const n = absPath.replace(/\\/g, '/'); const i = n.indexOf('/Assets/'); return i >= 0 ? n.slice(i + 8) : n; }
+export function relToAssets(absPath) {
+  const n = absPath.replace(/\\/g, '/');
+  if (S.assetsRoot && n.startsWith(S.assetsRoot + '/')) return n.slice(S.assetsRoot.length + 1);     // the content root, whatever the engine
+  const i = n.indexOf('/Assets/');
+  return i >= 0 ? n.slice(i + 8) : n;
+}
+/** How the engine writes a project path: "Assets/" (Unity) or "res://" (Godot); the project's own, once its state is in. */
+export const enginePrefix = () => S.data?.engine_prefix || 'Assets/';
+/** A project path without that prefix: the path under the content root. */
+export const underPrefix = path => (path.startsWith(enginePrefix()) ? path.slice(enginePrefix().length) : path);
+export const engineLabel = () => (S.data?.engine === 'godot' ? 'Godot' : 'Unity');
 
 export function matches(entry, q) {
   if (!q) return true;

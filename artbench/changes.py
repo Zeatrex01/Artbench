@@ -46,12 +46,13 @@ LOOK_LOCK_TIMEOUT = 2.0         # seconds; a look that finds the project busy is
 
 def _asset_snapshot(cfg, force=False):
     """Project mode: ({asset id: {"path", "hash", "size"}} for every dump asset of the catalog's kinds, whether a dump
-    path was missing); (None, False) when the engine project cannot be read. The hash covers the asset and its .meta,
-    so a change of import settings is a change too."""
+    path was missing); (None, False) when the engine project cannot be read. The hash covers the asset and its
+    sidecars (.meta, .import), so a change of import settings is a change too."""
     dump = engines.dump(cfg, force=force)
     if not dump:
         return None, False
-    prefix = engines.of(cfg).prefix
+    adapter = engines.of(cfg)
+    prefix = adapter.prefix
     kinds = set(cfg.get("catalog_kinds") or [])
     out, missing = {}, False
     for asset_id, a in dump["assets"].items():
@@ -59,8 +60,7 @@ def _asset_snapshot(cfg, force=False):
             continue
         p = os.path.normpath(os.path.join(dump["assets_root"], a["path"]))
         try:
-            meta = p + ".meta"
-            digest = files.sha(p) + ":" + (files.sha(meta) if os.path.exists(meta) else "")
+            digest = files.sha(p) + ":" + ":".join(files.sha(s) for s in adapter.sidecars(p) if os.path.exists(s))
             out[asset_id] = {"path": prefix + a["path"], "hash": digest, "size": os.path.getsize(p)}
         except OSError:
             missing = True                            # moved or deleted since the dump was read

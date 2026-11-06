@@ -5,7 +5,7 @@ import { t } from './i18n.js';
 import { $, $$, esc, emptyState, callout, toast, fmtStamp } from './ui.js';
 import { api } from './api.js';
 import { thumbHTML } from './thumbs.js';
-import { S, KIND, actions, matches, enginePathAbs, isProject } from './state.js';
+import { S, KIND, actions, matches, enginePathAbs, isProject, underPrefix } from './state.js';
 import { tile, lrow, groupHead } from './library.js';
 import { reveal, openFile } from './inspector.js';
 
@@ -75,7 +75,7 @@ const CHANGE = { ADDED: ['ok', 'change.added'], CHANGED: ['warn', 'change.change
 /** Project mode: what is new since the person's last Mark as seen, then the whole feed. */
 function projectChange(c) {
   const [cls, labelKey] = CHANGE[c.change] || ['dim', null];
-  const id = 'engine:' + String(c.path).replace(/^Assets\//, '');
+  const id = 'engine:' + underPrefix(String(c.path));
   const known = c.change !== 'REMOVED' && (S.data.catalog?.assets || []).some(a => a.id === id);
   const path = known ? `<a class="mono" data-jump="${esc(id)}" style="cursor:pointer;color:var(--text)">${esc(c.path)}</a>` : `<span class="mono">${esc(c.path)}</span>`;
   return { time: c.time, cls, html: `<span class="chip ${cls} nodot">${labelKey ? t(labelKey) : esc(c.change)}</span>${c.from ? `<span class="mono dim">${esc(c.from)}</span><span class="dim">→</span>` : ''}${path}` };

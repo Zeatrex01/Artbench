@@ -3,9 +3,10 @@ calls every module uses for the engine side: dump(), unreachable() and content_r
 import os
 
 from ..errors import Unavailable
+from .godot import GodotAdapter
 from .unity import UnityAdapter
 
-ADAPTERS = {"unity": UnityAdapter()}
+ADAPTERS = {"unity": UnityAdapter(), "godot": GodotAdapter()}
 
 
 def of(cfg):
@@ -30,5 +31,5 @@ def unreachable(cfg):
 
 
 def content_root(cfg):
-    """The engine's content root (Unity: the Assets folder)."""
+    """The engine's content root (Unity: the Assets folder, Godot: the project folder)."""
     return of(cfg).content_root(cfg)

@@ -144,6 +144,8 @@ ASSET_BUNDLE_RE = re.compile(r"^\s*assetBundleName:[ \t]*\S", re.M)
 def _addressables(cfg):
     """Assets loaded through Addressables or AssetBundles are found by their own records, which Artbench does not read:
     they may show as unreferenced."""
+    if engines.of(cfg).name != "unity":
+        return "skip", "Unity only"
     root = engines.of(cfg).content_root(cfg)
     if os.path.isdir(os.path.join(root, "AddressableAssetsData")):
         return "warn", "Addressables found: assets loaded through them may show as unreferenced"

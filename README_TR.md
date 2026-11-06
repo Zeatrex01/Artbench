@@ -37,6 +37,16 @@ sürümü indirmeye başlar. Açılışta kısa bir animasyon oynar (kalem tezg�
 tuş ya da tıklama geçer, sistemde "hareketi azalt" açıksa hiç oynamaz.
 `server.py` değişince sunucu yeniden başlatılmalı (kodu sıcak yüklemez).
 
+## Unity ve Godot
+Artbench Unity projesini de Godot 4 projesini de aynı biçimde bağlar: **Projeler** → proje klasörünü seç; klasörde
+`Assets` + `ProjectSettings` varsa Unity, `project.godot` varsa Godot sayılır. Godot'ta varlıklar `res://...` yoluyla
+görünür, kimlik olarak Godot'un kendi `uid`'i kullanılır; ne neyi kullanıyor sahnelerden (.tscn), kaynaklardan (.tres),
+betiklerden (.gd) ve `project.godot`'tan okunur, Godot'un açık olması gerekmez. Başka bir sahnede örneklenen sahne
+"prefab", diğerleri "sahne" olur; ana sahne ve `project.godot`'un andığı her şey (autoload'lar, simge) kullanılıyor
+sayılır. `addons` klasörü yalnızca referans için okunur. Betikte yolu çalışırken kuran bir yükleme görünmez: silmeden
+önce yine bak. Arşivle ve gönderirken varlığın `.import` ve `.uid` dosyaları da onunla gider. Henüz yok: Godot
+editöründen canlı bağlantı.
+
 ## Favoriler, revize notları, etiketler, seçip aktarmak
 Bir varlığın kartında **Favori** (yıldız) ve **Revize gelecek** (isteğe bağlı notuyla) var; satırlarda yıldız ve
 Revize rozeti görünür, hepsi sol menüdeki **İşaretli** sekmesinde toplanır (Revize bekleyenler / Favoriler). Satırların

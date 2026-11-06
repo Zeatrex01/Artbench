@@ -37,6 +37,9 @@ def state(cfg):
     if data.get("mode") == "project":
         data["catalog"] = catalog.light(data["catalog"])
         data["since_seen"] = changes.since_seen(cfg)
+    adapter = engines.of(cfg)                                # which engine this project is, for the page's paths
+    data["engine"], data["engine_prefix"] = adapter.name, adapter.prefix
+    data["engine_content_root"] = adapter.content_root(cfg) if cfg.get("engine_root") else None
     data["ai_activity"] = mcp_link.recent(15)                # the page's AI line: what the AI did lately
     data["marks"] = marks.load(cfg)                          # stars and revision flags on rows, cards and the Marked view
     return data

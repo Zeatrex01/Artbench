@@ -82,7 +82,7 @@ def check_engine(path):
             return {"ok": True, "engine": name, "project_root": found["project_root"], "assets_root": content,
                     "engine_root": path if inside else content,
                     "message": f"{name.capitalize()} project" + ("" if inside else f"; art root set to {os.path.basename(content)}, narrow it if you want")}
-    return {"ok": False, "engine": None, "message": "no Unity project found above this folder (needs Assets + ProjectSettings)"}
+    return {"ok": False, "engine": None, "message": "no engine project found above this folder (Unity: Assets + ProjectSettings; Godot: project.godot)"}
 
 
 @_tracked
@@ -265,19 +265,23 @@ def hide_folder(project_id, folder, hidden=True):
     """Hides a folder of the engine project from the catalog (hidden=False shows it again): an engine_ignore_dump
     entry "Assets/<path>", so its assets leave the catalog while what they reference still counts. Rebuilds the dump
     and writes a HIDE or SHOW history line. Returns the project's ignore list. ValueError for a path that is not a
-    folder under Assets/, NotFound for an unknown project."""
-    path = (folder or "").replace("\\", "/")
-    parts = [p for p in path.strip("/").split("/") if p]
-    if not parts or path.startswith("/") or ":" in path or ".." in parts:
-        raise ValueError(f"not a folder under Assets/: {folder!r}")
-    if parts[0] != "Assets":
-        parts = ["Assets"] + parts
-    if len(parts) < 2:
-        raise ValueError("the Assets folder itself cannot be hidden")
-    entry = "/".join(parts)
+    folder under the content root (Unity: Assets/, Godot: res://), NotFound for an unknown project."""
     cfg = next((c for c in config.projects() if c.get("id") == project_id and "error" not in c), None)
     if cfg is None:
         raise NotFound(f"project {project_id}")
+    prefix = engines.of(cfg).prefix                        # "Assets/" or "res://"
+    path = (folder or "").replace("\\", "/")
+    if path.startswith(prefix):
+        path = path[len(prefix):]
+    elif prefix == "Assets/" and path.strip("/") == "Assets":
+        path = ""
+    parts = [p for p in path.strip("/").split("/") if p]
+    if path.startswith("/") or ":" in path or ".." in parts:
+        raise ValueError(f"not a folder under {prefix}: {folder!r}")
+    if not parts:
+        raise ValueError(f"the {prefix.rstrip('/:')} folder itself cannot be hidden" if prefix == "Assets/"
+                         else "the project folder itself cannot be hidden")
+    entry = prefix + "/".join(parts)
     raw = store._read_json(cfg["config_path"], {})
     raw = raw if isinstance(raw, dict) else {}
     adapter = engines.of(cfg)
