@@ -63,7 +63,7 @@ export function renderSidebar() {
       ${more.length ? `<button class="nav-more ${moreOpen ? 'open' : ''}" id="navMore">${icon('chevron')}<span>${t('side.more')}</span>${moreWarn ? '<span class="n warn">•</span>' : ''}</button>
       <div class="nav-more-list" ${moreOpen ? '' : 'hidden'}>${more.map(navLink).join('')}</div>` : ''}</nav>
     <div class="side-scroll">${S.view === 'library' && !project ? tree(c) : project && ['catalog', 'unused'].includes(S.view) ? kindNav() : ''}</div>
-    <div class="side-foot"><button class="btn ghost sm" id="openProjects">${icon('settings')} ${t('side.projects')}</button><button class="btn ghost sm" id="langBtn" title="${t('ui.language')}">${lang() === 'en' ? 'TR' : 'EN'}</button><div class="stamps" id="stamps"></div></div>`;
+    <div class="side-foot"><div id="aiLine"></div><button class="btn ghost sm" id="openProjects">${icon('settings')} ${t('side.projects')}</button><button class="btn ghost sm" id="langBtn" title="${t('ui.language')}">${lang() === 'en' ? 'TR' : 'EN'}</button><div class="stamps" id="stamps"></div></div>`;
   if (S.about) $('#sidebar .side-foot').insertAdjacentHTML('beforeend', `<button class="sign" title="${t('about.title')}">Artbench ${esc(S.about.version)} · ${esc(S.about.author)}</button>`);
   renderStamps();
   const sign = $('#sidebar .sign'); if (sign) sign.onclick = actions.openProjects;
@@ -84,7 +84,22 @@ export function renderSidebar() {
   const clear = $('#clearFilters'); if (clear) clear.onclick = () => { S.filters = { state: null, usage: null, sync: null, category: null, set: null }; actions.render(); };
 }
 
+/** The AI line: the AI's latest call through Artbench (a live dot while it works); a click lists the latest calls. */
+function renderAi() {
+  const el = $('#aiLine'); if (!el) return;
+  const calls = S.data?.ai_activity || [];
+  if (!calls.length) { el.innerHTML = ''; return; }
+  const last = calls[0], live = Date.now() / 1000 - last.t < 15;
+  const row = c => `<div class="airow ${c.ok ? '' : 'bad'}"><span class="t">${esc(fmtTime(c.t))}</span><b>${esc(c.tool)}</b>
+    <span class="a" title="${esc(c.args)}">${esc(c.args)}</span>${c.write ? `<span class="chip accent nodot">${t('ai.changed')}</span>` : ''}${c.ok ? '' : `<span class="chip bad" title="${esc(c.error || '')}">${t('ai.failed')}</span>`}</div>`;
+  el.innerHTML = `<button class="ailine" id="aiToggle" title="${t('ai.title')}"><span class="dot ${last.ok ? 'ok' : 'bad'} ${live ? 'live' : ''}"></span>
+      <span class="who">AI</span><b>${esc(last.tool)}</b><span class="when">${esc(fmtTime(last.t))}</span></button>
+    ${S.aiOpen ? `<div class="aipanel" id="aiPanel"><div class="aihead">${t('ai.title')}</div>${calls.map(row).join('')}</div>` : ''}`;
+  $('#aiToggle', el).onclick = () => { S.aiOpen = !S.aiOpen; renderAi(); };
+}
+
 export function renderStamps() {
+  renderAi();
   const el = $('#stamps'); if (!el || !S.data) return;
   const stale = S.data.engine_scanned && (Date.now() / 1000 - S.data.engine_scanned) > 300;
   const b = S.engineStatus;

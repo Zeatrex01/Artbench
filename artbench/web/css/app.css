@@ -668,3 +668,24 @@ body.picking #view { padding-bottom: 84px; }
 .projcard .perfrow { margin-top: 6px; flex-wrap: wrap; gap: 8px 14px; }
 .perf { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--muted); }
 .perf select { font-size: 12px; padding: 4px 26px 4px 8px; }
+
+/* The AI line: the AI's latest call through Artbench, and the list of the latest ones */
+#aiLine { position: relative; }
+.ailine { display: flex; align-items: center; gap: 6px; width: 100%; padding: 4px 2px; border: 0; background: none; cursor: pointer;
+  font-size: 11.5px; color: var(--muted); text-align: left; }
+.ailine:hover { color: var(--text); }
+.ailine .who { font: 600 10.5px var(--mono); color: var(--dim); letter-spacing: .04em; }
+.ailine b { font: 500 11.5px var(--mono); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ailine .when { margin-left: auto; font: 10.5px var(--mono); color: var(--dim); }
+.ailine .dot.live { animation: ai-live 1.2s ease-in-out infinite; }
+@keyframes ai-live { 50% { opacity: .3; } }
+@media (prefers-reduced-motion: reduce) { .ailine .dot.live { animation: none; } }
+.aipanel { position: absolute; left: 0; width: min(420px, calc(100vw - 24px)); bottom: calc(100% + 6px); z-index: 20; max-height: 320px; overflow: auto;
+  background: var(--s1); border: 1px solid var(--line); border-radius: var(--r2); padding: 6px 8px; }
+.aihead { font-size: 11px; color: var(--dim); padding: 2px 0 6px; }
+.airow { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto auto; gap: 6px; align-items: center; padding: 4px 0;
+  border-top: 1px solid var(--line); font-size: 11.5px; }
+.airow .t { font: 10.5px var(--mono); color: var(--dim); }
+.airow b { font: 500 11.5px var(--mono); }
+.airow .a { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 11px var(--mono); }
+.airow.bad b { color: var(--bad); }

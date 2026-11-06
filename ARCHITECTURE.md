@@ -74,7 +74,8 @@ store.py            per-project persisted files: notes (inventory.json), tasks.j
                     atomic JSON writes, the project lock (.artbench.lock) every writer holds, locked_path for any lock file
 workspace.py        connecting projects: engine check, art folder link/create from template, registry, hiding a folder
 github_link.py      the GitHub account a project pushes as, compared with the account gh is set to (read-only)
-mcp_link.py         the AI connection: which AI tools start Artbench's MCP server (read-only), adding it to Claude Code
+mcp_link.py         the AI connection: which AI tools start Artbench's MCP server (read-only), adding it to Claude Code,
+                    and what the AI did (each MCP tool call noted in .cache/ai_activity.jsonl, read by the page)
 app_window.py       the page as a desktop app: a Chromium browser's app mode with its own profile, the server's stop
                     when the window closes (or after a quiet spell), the log without a console, the desktop launcher
                     (Windows .lnk, macOS .command), the native folder picker (Finder's on a Mac, tkinter, else
@@ -694,6 +695,12 @@ paths that no longer exist at the first save of a run. Rendered previews (`.cach
 served preview's mtime notes its use, at most once a day); they are rebuilt on demand. Model measurements
 (`.cache/meta`) are never trimmed: a change's before/after needs the old content's. A project on an unplugged drive
 loses its cache entries and is read in full on its next scan; nothing else is lost.
+
+**What the AI did.** Each tool call through the MCP server is one line in `.cache/ai_activity.jsonl`
+(`mcp_link.record`, `ARTBENCH_AI_ACTIVITY` names another file): `{t, tool, project, args (one short line, the project
+left out, at most 120 characters), ok, ms, write (a WRITE_OPS op), error?}`. Writing it never breaks the call; past
+64 KB the file keeps its latest 200 lines. The page state carries the latest 15 (`ai_activity`); the sidebar's AI
+line shows the latest call (a live dot for 15 s), and a click lists them with changed / failed marks.
 
 **Archive** (`actions.archive_plan` / `archive` / `archived` / `restore`; the page's and the command line's,
 `PAGE_ONLY`: moving files out of the game project is the person's click, never an AI's). An engine asset goes only

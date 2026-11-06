@@ -45,6 +45,10 @@ solundaki kutuyla birkaç varlığı seç (Shift: aralık); alttaki çubuktan he
 önce plan gösterilir, orada olan dosyanın üstüne yazılmaz. Unity'deki bir modeli art klasörüne alırken de dokularını
 getirmek için kutu işaretli gelir.
 
+**AI ne yaptı**: sol menünün altındaki küçük **AI** satırı, AI'nın Artbench'te çağırdığı son aracı ve saatini
+gösterir (çalışırken nokta yanıp söner). Tıklayınca son çağrılar listelenir: araç, kısa argümanlar, bir şeyi değiştirdiyse
+"değiştirdi", hata verdiyse "başarısız". Kayıt Artbench'in kendi klasöründe tutulur ve büyümez.
+
 **Performans**: sol alttaki **Projeler** ekranında her projenin kartında iki ayar var. **Model önizlemeleri**: Açık
 (yalnızca ekrandaki satırlar) ya da Kapalı; görseller (png, jpg) her zaman görünür. **Model ölçümü** (üçgen, vertex,
 materyal): **Kart açılınca** (varsayılan, yalnızca açtığın model ölçülür), **Hepsi, arka planda** (bütün modeller

@@ -13,7 +13,7 @@ export const S = {
   selected: null, graphFocus: null,
   closedGroups: prefs.get('closedGroups', {}), closedCats: prefs.get('closedCats', {}),
   hashes: {}, busy: false, assetsRoot: null, scenes: null, engineStatus: null,
-  sinceSeen: [], picked: new Set(), markFilter: 'all', markTag: null, checks: null, archived: null, checkTab: 'standards', checkRule: null, checkRulesOpen: false, catFilters: { kind: null, usage: null, folder: null, mark: null, tag: null }, catGroup: prefs.get('catGroup', 'kind'), catSort: prefs.get('catSort', 'name'),   // project mode
+  sinceSeen: [], picked: new Set(), markFilter: 'all', markTag: null, aiOpen: false, checks: null, archived: null, checkTab: 'standards', checkRule: null, checkRulesOpen: false, catFilters: { kind: null, usage: null, folder: null, mark: null, tag: null }, catGroup: prefs.get('catGroup', 'kind'), catSort: prefs.get('catSort', 'name'),   // project mode
 };
 
 /** [view key, i18n key of its label, icon, more]: Tasks first (the view people keep open); views marked more wait under

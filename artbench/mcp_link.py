@@ -1,11 +1,13 @@
 """The AI connection (MCP): which AI tools (Claude Code, Gemini CLI, Codex) start Artbench's MCP server, and adding
 it to Claude Code. Reads the tools' own config files and never writes them; adding runs Claude Code's own `claude
-mcp` commands."""
+mcp` commands. Also what the AI did: each tool call through the MCP server is noted in .cache/ai_activity.jsonl
+(record), which the page reads (recent)."""
 import json
 import os
 import shutil
 import subprocess
 import sys
+import time
 
 from . import config
 
@@ -13,6 +15,70 @@ MCP_NAME = "artbench"
 MCP_MODULE = "artbench.mcp_server"
 CLAUDE_TIMEOUT = 60      # seconds for each `claude mcp` call (a first run can stop at a login prompt)
 _MCP_TOOLS = [("claude", "Claude Code"), ("gemini", "Gemini CLI"), ("codex", "Codex")]
+ACTIVITY_PATH = os.environ.get("ARTBENCH_AI_ACTIVITY") or os.path.join(config.TOOL_ROOT, ".cache", "ai_activity.jsonl")
+ACTIVITY_MAX_BYTES = 64 * 1024     # past this the file is rewritten with its latest ACTIVITY_KEEP lines
+ACTIVITY_KEEP = 200
+ARGS_MAX = 120                     # characters of a call's arguments kept
+
+
+def _brief(args):
+    """A call's arguments in one short line, the project left out: `kind=texture, ids=a, b, c +2`."""
+    parts = []
+    for key, value in (args or {}).items():
+        if key == "project" or value in (None, "", [], {}):
+            continue
+        if isinstance(value, (list, tuple)):
+            shown = ", ".join(str(v) for v in value[:3]) + (f" +{len(value) - 3}" if len(value) > 3 else "")
+        elif isinstance(value, dict):
+            shown = "{" + ", ".join(str(k) for k in value) + "}"
+        else:
+            shown = str(value)
+        parts.append(f"{key}={shown[:60]}")
+    text = ", ".join(parts)
+    return text if len(text) <= ARGS_MAX else text[:ARGS_MAX - 1] + "…"
+
+
+def record(tool, args, ok, ms, error=None, write=False):
+    """Notes one AI tool call; never raises (a note that cannot be written must not break the AI's call)."""
+    entry = {"t": round(time.time(), 3), "tool": tool, "project": (args or {}).get("project"), "args": _brief(args),
+             "ok": bool(ok), "ms": int(ms), "write": bool(write)}
+    if error:
+        entry["error"] = str(error)[:200]
+    try:
+        os.makedirs(os.path.dirname(ACTIVITY_PATH), exist_ok=True)
+        with open(ACTIVITY_PATH, "a", encoding="utf-8") as f:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+        if os.path.getsize(ACTIVITY_PATH) > ACTIVITY_MAX_BYTES:
+            with open(ACTIVITY_PATH, encoding="utf-8") as f:
+                lines = f.read().splitlines()[-ACTIVITY_KEEP:]
+            while lines and len("\n".join(lines).encode("utf-8")) > ACTIVITY_MAX_BYTES * 3 // 4:
+                lines = lines[len(lines) // 4 or 1:]
+            tmp = ACTIVITY_PATH + ".tmp"
+            with open(tmp, "w", encoding="utf-8") as f:
+                f.write("\n".join(lines) + "\n")
+            os.replace(tmp, ACTIVITY_PATH)
+    except OSError:
+        pass
+
+
+def recent(limit=20):
+    """The latest AI tool calls, newest first; a line cut short is skipped."""
+    try:
+        with open(ACTIVITY_PATH, encoding="utf-8") as f:
+            lines = f.read().splitlines()
+    except OSError:
+        return []
+    out = []
+    for line in reversed(lines):
+        try:
+            entry = json.loads(line)
+        except ValueError:
+            continue
+        if isinstance(entry, dict) and entry.get("tool"):
+            out.append(entry)
+            if len(out) >= limit:
+                break
+    return out
 
 
 def mcp_entry():

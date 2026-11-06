@@ -8,8 +8,9 @@ one state under one set of rules.
 """
 import json
 import sys
+import time
 
-from . import config, ops
+from . import config, mcp_link, ops
 
 PROTOCOL_VERSION = "2024-11-05"
 SERVER_INFO = {"name": "artbench", "version": config.VERSION}
@@ -47,14 +48,17 @@ def handle(request):
         name = params.get("name")
         if name not in HANDLERS:
             return _error(rid, -32602, f"unknown tool {name}")
+        op, args, started = HANDLERS[name], params.get("arguments") or {}, time.monotonic()
         try:
-            value = ops.call(HANDLERS[name], params.get("arguments") or {})
+            value = ops.call(op, args)
             text = json.dumps(value, ensure_ascii=False, separators=(",", ":"))    # compact: an AI pays per character
             result = {"content": [{"type": "text", "text": text}], "isError": False}
         except ops.OpError as e:  # the agent gets the code and the message
             result = {"content": [{"type": "text", "text": f"{e.code}: {e.message}"}], "isError": True}
         except (TypeError, ValueError) as e:  # a result JSON cannot carry: the server keeps answering
             result = {"content": [{"type": "text", "text": f"internal: the result could not be encoded as JSON: {e}"}], "isError": True}
+        mcp_link.record(op, args, not result["isError"], (time.monotonic() - started) * 1000,     # what the AI did
+                        error=result["content"][0]["text"] if result["isError"] else None, write=op in ops.WRITE_OPS)
     else:
         if rid is None:
             return None
