@@ -689,3 +689,19 @@ body.picking #view { padding-bottom: 84px; }
 .airow b { font: 500 11.5px var(--mono); }
 .airow .a { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 11px var(--mono); }
 .airow.bad b { color: var(--bad); }
+
+/* Finished tasks archived off the board */
+.kcol .khead #taskArchAll { margin-left: auto; padding: 2px 8px; font-size: 11.5px; }
+.kcol .khead #taskArchAll + .n { margin-left: 6px; }
+.kcol .khead #taskArchAll svg { width: 13px; height: 13px; }
+.tarchive { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 8px; }
+.tarhead { display: flex; align-items: center; gap: 8px; padding: 6px 2px; border: 0; background: none; cursor: pointer;
+  color: var(--muted); font-size: 12.5px; font-weight: 600; }
+.tarhead:hover { color: var(--text); }
+.tarhead svg { width: 14px; height: 14px; }
+.tarhead .n { font: 11px var(--mono); color: var(--dim); }
+.tarchive.open .tarhead svg:last-child { transform: rotate(180deg); }
+.tarow { display: flex; align-items: center; gap: 12px; padding: 6px 4px; border-top: 1px solid var(--line); font-size: 12.5px; }
+.tarow .t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
+.tarow .dim { font-size: 11.5px; }
+.tarnone { font-size: 12px; padding: 6px 4px; }

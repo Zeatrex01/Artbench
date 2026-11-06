@@ -1,5 +1,6 @@
 """Task list per project (tasks.json next to the art root): things the artist wants to do, optionally tied to an
-asset id. Tasks are not project files, so they may be deleted; every change is one history line."""
+asset id. A finished task can be archived: it leaves the board but stays in tasks.json, listed apart and restorable.
+Tasks are not project files, so they may be deleted; every change is one history line."""
 import time
 import uuid
 
@@ -17,15 +18,52 @@ def _priority(value):
     return value
 
 
-def load(cfg):
-    """Tasks in board order: by status (to do, doing, done), then priority (high first), then oldest first. Tasks
-    saved before priorities existed read as normal."""
-    out = store.tasks(cfg)
+def load(cfg, archived=False):
+    """The board in order: by status (to do, doing, done), then priority (high first), then oldest first; archived
+    tasks are left out. archived=True: the archived ones instead, the latest archived first. Tasks saved before
+    priorities existed read as normal."""
+    out = [t for t in store.tasks(cfg) if bool(t.get("archived")) == archived]
     for t in out:
         t.setdefault("priority", "normal")
+    if archived:
+        return sorted(out, key=lambda t: -t["archived"])
     order = {s: i for i, s in enumerate(STATUSES)}
     rank = {p: i for i, p in enumerate(PRIORITIES)}
     return sorted(out, key=lambda t: (order.get(t.get("status"), 0), rank.get(t["priority"], 1), t.get("created") or 0))
+
+
+def archive(cfg, task_ids):
+    """Archives finished tasks (ValueError, nothing changed, when one is not done); one TASK ARCHIVE line each."""
+    now = time.time()
+    with store.locked(cfg):
+        tasks = store.tasks(cfg)
+        picked = [_find(tasks, i) for i in task_ids]
+        unfinished = [t["title"] for t in picked if t["status"] != "done"]
+        if unfinished:
+            raise ValueError(f"only finished tasks are archived, not: {', '.join(unfinished)}")
+        for task in picked:
+            if not task.get("archived"):
+                task["archived"] = now
+                store.log(cfg, "TASK ARCHIVE", task["id"], task["title"])
+        store.save_tasks(cfg, tasks)
+    return len(picked)
+
+
+def archive_done(cfg):
+    """Archives every finished task still on the board; how many."""
+    ids = [t["id"] for t in load(cfg) if t["status"] == "done"]
+    return archive(cfg, ids) if ids else 0
+
+
+def restore(cfg, task_id):
+    """Puts an archived task back on the board, among the finished; a TASK RESTORE line."""
+    with store.locked(cfg):
+        tasks = store.tasks(cfg)
+        task = _find(tasks, task_id)
+        if task.pop("archived", None) is not None:
+            store.save_tasks(cfg, tasks)
+            store.log(cfg, "TASK RESTORE", task["id"], task["title"])
+    return task
 
 
 def add(cfg, title, asset=None, note="", status="todo", priority="normal"):

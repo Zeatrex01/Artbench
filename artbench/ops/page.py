@@ -71,8 +71,8 @@ def reference_graph(cfg):
     return graph.build(cfg, engines.dump(cfg), scan.scan(cfg)["items"])
 
 
-def task_list(cfg):
-    return tasks.load(cfg)
+def task_list(cfg, archived=False):
+    return tasks.load(cfg, archived=archived)
 
 
 def thumb(cfg, path):
@@ -114,7 +114,8 @@ def mark_seen(cfg):
 
 
 def task(cfg, body):
-    """The board's one route: op add (the default), update or delete."""
+    """The board's one route: op add (the default), update, delete, archive (a finished task), archive_done (every
+    finished task) or restore (an archived one)."""
     op = body.get("op", "add")
     if op == "add":
         return tasks.add(cfg, body["title"], body.get("asset"), body.get("note", ""), body.get("status", "todo"),
@@ -123,4 +124,10 @@ def task(cfg, body):
         return tasks.update(cfg, body["id"], **{k: body.get(k) for k in ("title", "status", "asset", "note", "priority") if k in body})
     if op == "delete":
         return {"ok": tasks.delete(cfg, body["id"])}
+    if op == "archive":
+        return {"archived": tasks.archive(cfg, [body["id"]])}
+    if op == "archive_done":
+        return {"archived": tasks.archive_done(cfg)}
+    if op == "restore":
+        return tasks.restore(cfg, body["id"])
     raise ValueError("unknown op")

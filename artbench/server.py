@@ -152,7 +152,7 @@ class Handler(BaseHTTPRequestHandler):
                 with _lock:
                     self._json(page.reference_graph(page.project(q["project"][0])))
             elif u.path == "/api/tasks":
-                self._json(page.task_list(page.project(q["project"][0])))
+                self._json(page.task_list(page.project(q["project"][0]), archived=q.get("archived", ["0"])[0] == "1"))
             elif u.path == "/api/thumb":
                 # A preview (model render, texture image); 202 while Blender renders it, 404 if it cannot.
                 state, png, ctype = page.thumb(page.project(q["project"][0]), q.get("path", [None])[0])

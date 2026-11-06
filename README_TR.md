@@ -45,6 +45,10 @@ solundaki kutuyla birkaç varlığı seç (Shift: aralık); alttaki çubuktan he
 önce plan gösterilir, orada olan dosyanın üstüne yazılmaz. Unity'deki bir modeli art klasörüne alırken de dokularını
 getirmek için kutu işaretli gelir.
 
+**Görev arşivi**: bitmiş bir görevin kartındaki arşiv düğmesi onu panodan kaldırır; Bitti sütununun başındaki
+**Hepsini arşivle** bitmiş görevlerin hepsini kaldırır. Hiçbiri silinmez: panonun altındaki **Arşivlenen görevler**
+açılınca listelenir, **Geri al** ile Bitti sütununa döner.
+
 **AI ne yaptı**: sol menünün altındaki küçük **AI** satırı, AI'nın Artbench'te çağırdığı son aracı ve saatini
 gösterir (çalışırken nokta yanıp söner). Tıklayınca son çağrılar listelenir: araç, kısa argümanlar, bir şeyi değiştirdiyse
 "değiştirdi", hata verdiyse "başarısız". Kayıt Artbench'in kendi klasöründe tutulur ve büyümez.

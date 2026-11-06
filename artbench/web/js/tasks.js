@@ -1,4 +1,5 @@
-// Tasks: kanban view plus the small task rows the inspector shows. All writes go through /api/tasks.
+// Tasks: kanban view plus the small task rows the inspector shows, and the archive of finished tasks (off the board,
+// kept, restorable). All writes go through /api/tasks.
 import { api } from './api.js';
 import { icon } from './icons.js';
 import { $, $$, esc, fmtDate, fmtDateTime, toast, modal, emptyState } from './ui.js';
@@ -22,7 +23,21 @@ export async function deleteTask(t) {
   await api.post('/api/tasks', { project: S.project, op: 'delete', id: t.id }).catch(e => toast(e.message));
   return true;
 }
-async function after() { await actions.refresh(); actions.render(); }
+async function after() { if (S.taskArchiveOpen) await loadArchive(); await actions.refresh(); actions.render(); }
+const taskOp = body => api.post('/api/tasks', { project: S.project, ...body }).catch(e => toast(e.message));
+async function loadArchive() {
+  try { S.taskArchive = await api.get('/api/tasks', { project: S.project, archived: 1 }); } catch (e) { toast(e.message); }
+}
+
+/** Finished tasks that left the board: shown on demand under it, each with Restore. */
+function archiveSection() {
+  const list = S.taskArchive || [];
+  const rows = list.map(t => `<div class="tarow"><span class="t">${esc(t.title)}</span><span class="dim">${tr('tasks.archivedAt', { date: fmtDate(t.archived) })}</span>
+    <button class="btn ghost sm" data-task-restore="${esc(t.id)}">${icon('refresh')}${tr('tasks.restore')}</button></div>`).join('');
+  return `<div class="tarchive ${S.taskArchiveOpen ? 'open' : ''}"><button class="tarhead" id="taskArchToggle">${icon('inbox')}<span>${tr('tasks.archived')}</span>
+      ${S.taskArchive ? `<span class="n">${list.length}</span>` : ''}${icon('chevron')}</button>
+    ${S.taskArchiveOpen ? (list.length ? rows : `<div class="dim tarnone">${tr('tasks.archivedNone')}</div>`) : ''}</div>`;
+}
 
 /** Compact task row (inspector). */
 export const taskMini = t => `<div class="taskmini ${t.status}" data-task="${t.id}" data-priority="${prioOf(t)}"><span class="dot ${COLS.find(c => c[0] === t.status)?.[2] || 'dim'}"></span>${prioOf(t) !== 'normal' ? prioMark(t) : ''}<span class="t">${esc(t.title)}</span>
@@ -31,7 +46,8 @@ export const taskMini = t => `<div class="taskmini ${t.status}" data-task="${t.i
 export function bindTaskMinis(el) {
   $$('[data-task]', el).forEach(row => {
     const t = S.tasks.find(x => x.id === row.dataset.task); if (!t) return;
-    const next = $('[data-task-next]', row), del = $('[data-task-del]', row), chip = $('[data-task-asset]', row), prio = $('[data-task-prio]', row);
+    const next = $('[data-task-next]', row), del = $('[data-task-del]', row), chip = $('[data-task-asset]', row), prio = $('[data-task-prio]', row), arch = $('[data-task-arch]', row);
+    if (arch) arch.onclick = ev => { ev.stopPropagation(); taskOp({ op: 'archive', id: t.id }).then(() => { S.taskArchive = null; return after(); }); };
     if (next) next.onclick = ev => { ev.stopPropagation(); advanceTask(t).then(after); };
     if (prio) prio.onclick = ev => { ev.stopPropagation(); setPriority(t).then(after); };
     if (del) del.onclick = ev => { ev.stopPropagation(); deleteTask(t).then(d => d && after()); };
@@ -45,7 +61,7 @@ function card(t) {
   const chip = t.asset ? `<span class="assetchip" data-task-asset title="${esc(t.asset)}">${visual}<span class="ellip">${esc(a?.name || t.asset.split('/').pop())}</span></span>` : '';
   const when = t.status === 'done' && t.done ? tr('tasks.doneAt', { date: fmtDate(t.done) }) : fmtDate(t.created);
   return `<div class="task ${t.status} prio-${prioOf(t)}" data-task="${t.id}" data-priority="${prioOf(t)}"><div class="thead">${prioMark(t)}<div class="t">${esc(t.title)}</div></div>${t.note ? `<div class="n">${esc(t.note)}</div>` : ''}
-    <div class="foot">${chip}<span>${when}</span><button class="btn sm" data-task-next>${TASK_NEXT_LABEL[t.status]}</button><button class="btn ghost icon sm" data-task-del title="${tr('ui.delete')}">${icon('trash')}</button></div></div>`;
+    <div class="foot">${chip}<span>${when}</span><button class="btn sm" data-task-next>${TASK_NEXT_LABEL[t.status]}</button>${t.status === 'done' ? `<button class="btn ghost icon sm" data-task-arch title="${tr('tasks.archive')}">${icon('inbox')}</button>` : ''}<button class="btn ghost icon sm" data-task-del title="${tr('ui.delete')}">${icon('trash')}</button></div></div>`;
 }
 
 export function viewTasks() {
@@ -58,12 +74,13 @@ export function viewTasks() {
     <select id="taskPrio" title="${tr('tasks.priorityLabel')}">${PRIORITIES.map(p => `<option value="${p}" ${p === 'normal' ? 'selected' : ''}>${tr('tasks.priority.' + p)}</option>`).join('')}</select>
     ${picker}
     <textarea id="taskNote" placeholder="${tr('tasks.notePlaceholder')}"></textarea><button class="btn primary" id="taskAdd">${icon('plus')} ${tr('ui.add')}</button></div>`;
-  if (!S.tasks.length) return add + emptyState('checksq', tr('tasks.empty'), tr('tasks.emptySub')) + fromBlender();
+  if (!S.tasks.length) return add + emptyState('checksq', tr('tasks.empty'), tr('tasks.emptySub')) + archiveSection() + fromBlender();
   const cols = COLS.map(([k, label, cls]) => {
     const list = S.tasks.filter(t => t.status === k);             // the server's board order: priority, then oldest
-    return `<div class="kcol"><div class="khead"><span class="dot ${cls}"></span><b>${tr(label)}</b><span class="n">${list.length}</span></div>${list.map(card).join('') || `<div class="dim" style="font-size:12px;padding:6px 4px">${tr('tasks.colEmpty')}</div>`}</div>`;
+    const archAll = k === 'done' && list.length ? `<button class="btn ghost sm" id="taskArchAll" title="${tr('tasks.archiveAllTitle')}">${icon('inbox')}${tr('tasks.archiveAll')}</button>` : '';
+    return `<div class="kcol"><div class="khead"><span class="dot ${cls}"></span><b>${tr(label)}</b>${archAll}<span class="n">${list.length}</span></div>${list.map(card).join('') || `<div class="dim" style="font-size:12px;padding:6px 4px">${tr('tasks.colEmpty')}</div>`}</div>`;
   }).join('');
-  return add + `<div class="kanban">${cols}</div>` + fromBlender();
+  return add + `<div class="kanban">${cols}</div>` + archiveSection() + fromBlender();
 }
 
 /** Notes artists wrote in Blender: they live in each .blend and come here as a copy when the add-on sends them, so
@@ -91,6 +108,10 @@ export function bindTasks(el) {
     await after(); toast(tr('tasks.added'), 'ok'); $('#taskTitle')?.focus();
   };
   $('#taskAdd', el).onclick = add; title.onkeydown = ev => { if (ev.key === 'Enter') add(); };
+  const archAll = $('#taskArchAll', el);
+  if (archAll) archAll.onclick = () => taskOp({ op: 'archive_done' }).then(r => { if (r) toast(tr('tasks.archivedN', { n: r.archived }), 'ok'); S.taskArchive = null; return after(); });
+  $('#taskArchToggle', el).onclick = async () => { S.taskArchiveOpen = !S.taskArchiveOpen; if (S.taskArchiveOpen) await loadArchive(); actions.renderView(); };
+  $$('[data-task-restore]', el).forEach(b => b.onclick = () => taskOp({ op: 'restore', id: b.dataset.taskRestore }).then(after));
   if (isProject()) picker.oninput = () => { $('#taskAssetList', el).innerHTML = suggestions(picker.value).map(a => `<option value="${esc(a.id)}" label="${esc(a.folder)}"></option>`).join(''); };
   bindTaskMinis(el);
 }

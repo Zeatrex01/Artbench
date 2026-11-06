@@ -6,8 +6,9 @@ from .common import _cfg, _desktop_item, _page
 
 
 def op_tasks(args):
-    """The board in board order; status "open" is to do and doing. Empty fields are left out of each row."""
-    out = tasks.load(_cfg(args["project"]))
+    """The board in board order; status "open" is to do and doing; archived: the archived tasks instead. Empty fields
+    are left out of each row."""
+    out = tasks.load(_cfg(args["project"]), archived=bool(args.get("archived")))
     status = args.get("status")
     if status == "open":
         out = [t for t in out if t["status"] != "done"]
@@ -25,8 +26,14 @@ def op_task_add(args):
 
 
 def op_task_update(args):
+    cfg = _cfg(args["project"])
     fields = {k: args.get(k) for k in ("status", "title", "note", "asset", "priority") if k in args}
-    return tasks.update(_cfg(args["project"]), args["id"], **fields)
+    task = tasks.update(cfg, args["id"], **fields) if fields else None
+    if args.get("archived") is True:
+        tasks.archive(cfg, [args["id"]])
+    elif args.get("archived") is False:
+        tasks.restore(cfg, args["id"])
+    return next((t for t in tasks.load(cfg) + tasks.load(cfg, archived=True) if t["id"] == args["id"]), task)
 
 
 def op_mark(args):

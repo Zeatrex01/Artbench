@@ -38,7 +38,7 @@ package.py          asset package transfers: per-file send/pull plan (model + en
                     targets, team-safe default selection, textures first / model last, per-file outcome      writes history
 sync.py             two-way sync: status from the recorded base, pull (engine -> art), force rule, archive paths  writes history
 changes.py          change feed: snapshot diff of tracked files on both sides -> changes.log; one asset's timeline
-tasks.py            task list CRUD                                                   writes history
+tasks.py            task list CRUD; finished tasks archived off the board and restored     writes history
 marks.py            favourite stars, "revision coming" flags with a note and tags, per asset id (marks.json)  writes history
 export.py           game-project models with their textures into a folder of one's own, one folder per model,
                     plan then copy, nothing overwritten                                                writes history
@@ -695,6 +695,12 @@ paths that no longer exist at the first save of a run. Rendered previews (`.cach
 served preview's mtime notes its use, at most once a day); they are rebuilt on demand. Model measurements
 (`.cache/meta`) are never trimmed: a change's before/after needs the old content's. A project on an unplugged drive
 loses its cache entries and is read in full on its next scan; nothing else is lost.
+
+**Task archive.** A finished task can be archived (`tasks.archive`, `archive_done`, `restore`): it gets `archived`
+(a time) and leaves the board, the asset cards and the counts, but stays in tasks.json; `tasks.load(cfg,
+archived=True)` lists the archived ones, the latest first. Only a done task is archived (ValueError otherwise). The AI
+uses `tasks` (archived) and `task_update` (archived true / false); the board's /api/tasks route takes op archive,
+archive_done and restore, and GET /api/tasks?archived=1. One TASK ARCHIVE / TASK RESTORE line each.
 
 **What the AI did.** Each tool call through the MCP server is one line in `.cache/ai_activity.jsonl`
 (`mcp_link.record`, `ARTBENCH_AI_ACTIVITY` names another file): `{t, tool, project, args (one short line, the project

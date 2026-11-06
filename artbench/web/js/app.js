@@ -106,7 +106,7 @@ function renderView() {
 }
 
 function setView(view) { S.view = view; prefs.set('view', view); S.search = ''; render(); }
-function switchProject(id) { S.picked.clear(); S.project = id; prefs.set('project', id); S.data = null; S.catFilters = { kind: null, usage: null, folder: null, mark: null, tag: null }; S.markTag = null; S.graph = null; S.scenes = null; S.scenesError = null; S.checks = null; S.checkRule = null; S.archived = null; S.engineStatus = null; S.selected = null; S.hashes = {}; clearThumbs(); render(); refresh(); }
+function switchProject(id) { S.picked.clear(); S.project = id; prefs.set('project', id); S.data = null; S.catFilters = { kind: null, usage: null, folder: null, mark: null, tag: null }; S.markTag = null; S.graph = null; S.scenes = null; S.scenesError = null; S.checks = null; S.checkRule = null; S.archived = null; S.taskArchive = null; S.taskArchiveOpen = false; S.engineStatus = null; S.selected = null; S.hashes = {}; clearThumbs(); render(); refresh(); }
 function select(id, jump = false) {
   S.selected = (S.selected === id && !jump) ? null : id;
   if (jump && S.selected && isProject()) {
