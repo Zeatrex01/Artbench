@@ -20,7 +20,7 @@ Bugs and ideas: open an issue with what you did, what you expected and what happ
 ## Releasing
 
 1. Set the version in `artbench/__init__.py` (`__version__`).
-2. Push a tag with that version: `git tag v0.1.1 && git push origin v0.1.1`. The release also carries the zip as
+2. Push a tag with that version: `git tag v0.1.2 && git push origin v0.1.2`. The release also carries the zip as
    `Artbench-windows-x64.zip`, so `releases/latest/download/Artbench-windows-x64.zip` always fetches the newest.
 3. The `release` workflow builds the Windows download on Windows, starts it with its own Python, and only when it
    answers creates the GitHub Release with `Artbench-<version>-windows-x64.zip` and the Blender add-on attached.

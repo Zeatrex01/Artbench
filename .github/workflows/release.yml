@@ -3,7 +3,7 @@
 # and only then creates the GitHub Release with the zip and the Blender add-on attached. The zip goes up twice: with
 # its version, and as Artbench-windows-x64.zip, so .../releases/latest/download/Artbench-windows-x64.zip (the README's
 # and the page's lasting link) always fetches the newest. Not a pre-release: GitHub's "latest" skips those.
-#   git tag v0.1.1 && git push origin v0.1.1
+#   git tag v0.1.2 && git push origin v0.1.2
 name: release
 
 on:
