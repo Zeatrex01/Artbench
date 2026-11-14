@@ -9,6 +9,8 @@ JPEG_SCAN = 1 << 20                   # bytes read looking for a JPEG's frame he
 def read(path):
     """{"width", "height", "format"} or None."""
     try:
+        if not os.path.isfile(path):          # a pipe or device named .png would block
+            return None
         with open(path, "rb") as f:
             head = f.read(32)
             if head[:8] == b"\x89PNG\r\n\x1a\n" and head[12:16] == b"IHDR":

@@ -127,7 +127,16 @@ function stat(v, label, color, sub, target) {
 function warnings() {
   if (S.data.engine_unreachable) return callout('warn', t('lib.engineUnreachable', { root: esc(S.data.engine_root) }));
   if (S.data.catalog?.force_text === false) return callout('warn', t('cat.forceTextOff'));
-  return '';
+  return unreadableNote();
+}
+
+/** The files whose references could not be read (damaged, too large, Zstd before Python 3.14): their count, and the
+    files with the reason behind a fold, since an asset only they use reads as unreferenced. */
+function unreadableNote() {
+  const list = S.data.catalog?.unreadable || [];
+  if (!list.length) return '';
+  const rows = list.slice(0, 200).map(u => `<li><span class="mono">${esc(u.path)}</span>: ${esc(u.reason)}</li>`).join('');
+  return callout('warn', `${t('cat.unreadable', { n: list.length })}<details class="unreadable"><summary>${t('cat.unreadableList')}</summary><ul>${rows}${list.length > 200 ? '<li>…</li>' : ''}</ul></details>`);
 }
 
 /** The folders hidden from the catalog (their references still count), each with a button to show it again. */

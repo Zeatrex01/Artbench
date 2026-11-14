@@ -103,7 +103,8 @@ def standards(cfg, assets):
                 if r["power_of_two"] and not (_power_of_two(w) and _power_of_two(h)):
                     flag(a, "power_of_two", f"{w} x {h}")
             if r["uncompressed"] and settings.get("compressed") is False:
-                flag(a, "uncompressed", "lossless until the Godot editor sees it used in 3D and switches it to VRAM "
+                now = {0: "lossless", 3: "VRAM uncompressed"}.get(settings.get("compress_mode"), "not compressed")
+                flag(a, "uncompressed", f"{now} until the Godot editor sees it used in 3D and switches it to VRAM "
                      "compression (detect_3d); a texture only a script loads may never be switched" if settings.get("detect_3d")
                      else "compression is off")
         if r["read_write"] and settings.get("readable"):

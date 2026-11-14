@@ -49,6 +49,8 @@ def build(cfg, dump):
                     + [dict(link(outside[g]), ignored=True) for g in (dump.get("uses") or {}).get(rel, []) if g in outside],
             "in_build": (guid in build_scenes) if a["kind"] == "scene" else None,
         }
+        if used == "by_name":
+            entry["named_by"] = [link(r) for r in (dump.get("named") or {}).get(guid, [])]
         if a["kind"] == "texture":
             entry["image"] = image_info.read(os.path.normpath(os.path.join(dump["assets_root"], rel)))
         out.append(entry)

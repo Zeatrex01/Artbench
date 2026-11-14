@@ -37,7 +37,10 @@ def snapshot(cfg):
         for p in files.walk(root, ignore):
             if p.lower().endswith(exts):
                 rel = os.path.relpath(p, root).replace("\\", "/")
-                out[f"{side}:{rel}"] = {"hash": files.sha(p), "size": os.path.getsize(p)}
+                try:
+                    out[f"{side}:{rel}"] = {"hash": files.sha(p), "size": os.path.getsize(p)}
+                except OSError:              # gone since the walk, or not a regular file
+                    continue
     return out
 
 

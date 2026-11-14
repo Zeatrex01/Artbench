@@ -5,6 +5,7 @@ import json
 import os
 import time
 import posixpath
+import stat
 import unicodedata
 import urllib.parse
 
@@ -41,6 +42,8 @@ def sha(path):
             loaded = {}
         _hash_cache = {k: v for k, v in loaded.items() if isinstance(v, list) and len(v) == 5} if isinstance(loaded, dict) else {}
     st = os.stat(path)
+    if not stat.S_ISREG(st.st_mode):         # a pipe or device would block or never end
+        raise OSError(f"not a regular file: {path}")
     stamp = [st.st_size, st.st_mtime_ns, _change_ns(path, st)]
     hit = _hash_cache.get(path)
     if hit and hit[:3] == stamp and stamp[2] is not None and max(stamp[1], stamp[2]) < hit[3] - RACY_NS:
@@ -117,7 +120,7 @@ def _gltf_uris(path):
         return hit[1]
     uris = {"buffers": [], "images": []}
     try:
-        if st.st_size <= GLTF_MAX_BYTES:
+        if st.st_size <= GLTF_MAX_BYTES and stat.S_ISREG(st.st_mode):
             with open(path, encoding="utf-8-sig") as f:
                 doc = json.load(f)
             for key in uris:
@@ -126,7 +129,7 @@ def _gltf_uris(path):
                     uri = e.get("uri") if isinstance(e, dict) else None
                     if isinstance(uri, str) and not uri.startswith("data:"):
                         uris[key].append(uri)
-    except (OSError, ValueError):
+    except (OSError, ValueError, RecursionError, MemoryError):   # a damaged or hostile .gltf names nothing
         pass
     _gltf_memo[path] = (stamp, uris)
     return uris

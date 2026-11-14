@@ -88,17 +88,27 @@ def main(argv, out=None):
     try:
         result = ops.call(a.operation, args)
     except ops.OpError as e:
-        out.write(json.dumps({"ok": False, "error": {"code": e.code, "message": e.message, "detail": e.detail}},
-                             ensure_ascii=False, indent=indent) + "\n")
+        out.write(_json({"ok": False, "error": {"code": e.code, "message": e.message, "detail": e.detail}}, indent) + "\n")
         return 1
     try:
-        text = json.dumps(result, ensure_ascii=False, indent=indent)
+        text = _json(result, indent)
     except (TypeError, ValueError) as e:
         out.write(json.dumps({"ok": False, "error": {"code": "internal", "message": f"the result could not be encoded as JSON: {e}",
                                                      "detail": None}}, indent=indent) + "\n")
         return 1
     out.write(text + "\n")
     return 0
+
+
+def _json(obj, indent):
+    """JSON text with readable non-ASCII; a file name that is not UTF-8 (a lone surrogate) makes it \\u-escaped
+    instead, still valid JSON, where writing it raw would fail."""
+    text = json.dumps(obj, ensure_ascii=False, indent=indent)
+    try:
+        text.encode("utf-8")
+    except UnicodeEncodeError:
+        text = json.dumps(obj, indent=indent)
+    return text
 
 
 ADDON_DIR = os.path.join(config.TOOL_ROOT, "blender_addon", "artbench_bridge")
@@ -130,7 +140,8 @@ def _setup(a, out):
         except ValueError as e:
             out.write(f"GitHub account not saved: {e}\n")
     counts = ops.catalog_counts(cfg)
-    listed = ", ".join(f"{n} {k}{'s' if n != 1 else ''}" for k, n in sorted(counts["kinds"].items()))
+    plural = lambda k, n: k if n == 1 else k + ("es" if k.endswith(("sh", "ch", "s", "x")) else "s")
+    listed = ", ".join(f"{n} {plural(k, n)}" for k, n in sorted(counts["kinds"].items()))
     lines = mcp_link.mcp_lines()
     out.write(f"Connected {cfg['name']} (id {cfg['id']}, project mode)\n  {cfg['engine_root']}\n"
               f"  {sum(counts['kinds'].values())} assets: {listed or 'none'}\n"

@@ -19,7 +19,7 @@ _DEFS = [
      "description": "One asset in full by id: path, size, usage, used_by and uses (50 rows each, with counts), its tasks.",
      "params": _schema({**_P, "id": {"type": "string"}}, ["project", "id"])},
     {"name": "unused",
-     "description": "Unreferenced assets (likely unused: check before deleting) and by_name ones (Resources, StreamingAssets: loaded from code), as brief rows, paged (offset, limit 25).",
+     "description": "Unreferenced assets (likely unused: check before deleting) and by_name ones (Unity: Resources, StreamingAssets, loaded from code; Godot: named by a game script by bare file name only), as brief rows, paged (offset, limit 25), plus the files whose references could not be read (unreadable, with the reason).",
      "params": _schema({**_P, **_PAGE}, ["project"])},
     {"name": "placeholders",
      "description": "Code-made mesh .asset files still waiting for a real model, with usage.",
@@ -119,7 +119,7 @@ _DEFS += [
 
 _DEFS += [
     {"name": "catalog",
-     "description": "The asset catalog, filtered (kind, usage, folder: an Assets/ prefix, search, mark) and paged (offset, limit 25, at most 500; total). Brief rows {id, kind, usage, used_by_count}; detail=full adds path, size, used_by, uses. usage: used, unreferenced, by_name (loaded from code), unknown (not Force Text).",
+     "description": "The asset catalog, filtered (kind, usage, folder: an Assets/ prefix, search, mark) and paged (offset, limit 25, at most 500; total). Brief rows {id, kind, usage, used_by_count}; detail=full adds path, size, used_by, uses. usage: used, unreferenced, by_name (only named by code: Unity Resources or StreamingAssets, or a bare file name in a Godot game script; no reference loads it), unknown (not Force Text).",
      "params": _schema({**_P, "kind": {"type": "string"}, "usage": {"type": "string"}, "folder": {"type": "string"},
                         "search": {"type": "string"}, "mark": {"type": "string", "enum": ["favorite", "revision"]}, "tag": {"type": "string"},
                         "detail": {"type": "string", "enum": ["brief", "full"]},

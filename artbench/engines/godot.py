@@ -54,6 +54,8 @@ class GodotAdapter(EngineAdapter):
         """The importer's settings in the asset's .import file: a texture's {max_size (process/size_limit), compressed
         (compress/mode), mipmaps}, a model's importer only. Read only; no .import file gives {}."""
         try:
+            if not os.path.isfile(path + ".import"):
+                return {}
             with open(path + ".import", encoding="utf-8", errors="replace") as f:
                 text = f.read(1 << 16)
         except OSError:
@@ -73,7 +75,7 @@ class GodotAdapter(EngineAdapter):
             return {"importer": "texture", "max_size": number("process/size_limit") or None,
                     "compressed": None if mode is None else mode not in NO_COMPRESSION,
                     "mipmaps": flag("mipmaps/generate"), "readable": None,
-                    "detect_3d": bool(number("detect_3d/compress_to"))}
+                    "compress_mode": mode, "detect_3d": bool(number("detect_3d/compress_to"))}
         if importer == "scene":
             return {"importer": "model", "readable": None}
         return {}
@@ -89,7 +91,8 @@ class GodotAdapter(EngineAdapter):
         if dump is None or time.time() - dump.get("scanned", 0) > DUMP_MAX_AGE or \
                 dump.get("scanned", 0) < self.dump_stale_since(cfg):
             ignore = cfg.get("engine_ignore_dump", self.dump_ignore())
-            dump = godot_dump.write(root, path, ignore, log=lambda *_: None, progress=progress)
+            dev = cfg.get("engine_dev_dirs", list(godot_dump.DEFAULT_DEV))
+            dump = godot_dump.write(root, path, ignore, log=lambda *_: None, progress=progress, dev=dev)
         return dump
 
     def lookup(self, dump):
@@ -104,7 +107,11 @@ class GodotAdapter(EngineAdapter):
 
     def usage(self, dump, asset_id):
         """Used: something references it, it is the main scene, or project.godot names it (an autoload, the icon).
-        Otherwise unreferenced: a path a script builds at run time cannot be seen (check before deleting)."""
+        By name: only a game script names it by its bare file name ("x.tres" as a lookup key or a compared name), so
+        it may be loaded or only compared (check before deleting). Otherwise unreferenced: a path a script builds at
+        run time cannot be seen (check before deleting). Scripts in the dev folders (engine_dev_dirs) name nothing."""
         if dump["refs"].get(asset_id) or asset_id in dump.get("build_scenes", ()) or asset_id in dump.get("settings_refs", {}):
             return "used"
+        if asset_id in (dump.get("named") or {}):
+            return "by_name"
         return "unreferenced"

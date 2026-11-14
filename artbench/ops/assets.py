@@ -51,7 +51,7 @@ def _project_overview(cfg, state):
         "placeholders_in_use": sum(1 for p in state["placeholders"] if p["usage"] == "used"),
         "layout_issues": len(state["layout_issues"]), "force_text": cat["force_text"],
         "engine_unreachable": state["engine_unreachable"], "engine_scanned": state["engine_scanned"],
-        "unreadable_resources": len(cat.get("unreadable") or ()),   # compressed files whose references are unknown
+        "unreadable_resources": len(cat.get("unreadable") or ()),   # files whose references are unknown (unused lists why)
         "changes_since_seen": _changes_since_seen(cfg),
         "folders": _folders(cat["assets"]), "tasks": _task_counts(cfg), "marks": marks.counts(marks.load(cfg)),
     }
@@ -143,8 +143,10 @@ def op_unused(args):
         marked = marks.load(cfg)
         unref, unref_total = _page([_catalog_summary(a, marked) for a in assets if a["usage"] == "unreferenced"], args)
         by_name, by_name_total = _page([_catalog_summary(a, marked) for a in assets if a["usage"] == "by_name"], args)
+        unreadable = state["catalog"].get("unreadable") or []
         return {"unreferenced": unref, "unreferenced_total": unref_total, "by_name": by_name,
-                "by_name_total": by_name_total, "unknown": sum(1 for a in assets if a["usage"] == "unknown")}
+                "by_name_total": by_name_total, "unknown": sum(1 for a in assets if a["usage"] == "unknown"),
+                "unreadable": unreadable[:LIST_CAP], "unreadable_total": len(unreadable)}
     return {"desktop_ingame": [_item_summary(i) for i in state["items"] if i["state"] == "ingame" and i["usage"] == "unused"],
             "engine_only": [_item_summary(i) for i in state["engine_only"] if i["usage"] == "unused"]}
 
