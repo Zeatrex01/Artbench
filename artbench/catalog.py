@@ -56,6 +56,7 @@ def build(cfg, dump):
         usage_counts[used] = usage_counts.get(used, 0) + 1
     out.sort(key=lambda e: (e["kind"], e["path"].lower()))
     return {"assets": out, "counts": {"kinds": kinds, "usage": usage_counts, "hidden": hidden},
+            "unreadable": list(dump.get("unreadable") or ()),
             "force_text": dump.get("force_text")}
 
 

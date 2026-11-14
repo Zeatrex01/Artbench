@@ -51,6 +51,7 @@ def _project_overview(cfg, state):
         "placeholders_in_use": sum(1 for p in state["placeholders"] if p["usage"] == "used"),
         "layout_issues": len(state["layout_issues"]), "force_text": cat["force_text"],
         "engine_unreachable": state["engine_unreachable"], "engine_scanned": state["engine_scanned"],
+        "unreadable_resources": len(cat.get("unreadable") or ()),   # compressed files whose references are unknown
         "changes_since_seen": _changes_since_seen(cfg),
         "folders": _folders(cat["assets"]), "tasks": _task_counts(cfg), "marks": marks.counts(marks.load(cfg)),
     }

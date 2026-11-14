@@ -41,6 +41,8 @@ RESOURCE_KIND = {                                    # a .tres by its type (the 
     "mesh": ("ArrayMesh", "BoxMesh", "SphereMesh", "CapsuleMesh", "CylinderMesh", "PlaneMesh", "QuadMesh", "PrimitiveMesh"),
     "atlas": ("AtlasTexture", "SpriteFrames", "TileSet"),
     "shader": ("Shader", "VisualShader"),
+    "texture": ("ImageTexture", "PortableCompressedTexture2D", "CompressedTexture2D", "GradientTexture1D",
+                "GradientTexture2D", "NoiseTexture2D", "Image"),
 }
 QUOTED_RES = re.compile(r"""["']\*?(res://[^"']+)["']""")
 QUOTED_UID = re.compile(r"""["'](uid://[a-z0-9]+)["']""")
@@ -48,6 +50,14 @@ OWN_UID = re.compile(r"""^uid=["'](uid://[a-z0-9]+)["']""", re.M)
 HEADER_UID = re.compile(r"""^\[gd_(?:scene|resource)[^\]\n]*\buid=["'](uid://[a-z0-9]+)["']""", re.M)
 HEADER_TYPE = re.compile(r"""^\[gd_resource[^\]\n]*\btype=["'](\w+)["']""", re.M)
 MAIN_SCENE = re.compile(r"""^run/main_scene=["']([^"']+)["']""", re.M)
+# A script that builds a path: a quoted folder ("res://a/b/") and quoted file names ("x.otf", "sub/y.tres") in the same
+# file; each name is tried under each folder. A name with no folder that matches one file only is a reference too.
+SCRIPT_EXTS = (".gd", ".cs")
+QUOTED_DIR = re.compile(r"""["'](res://[^"'\n]*/)["']""")
+QUOTED_NAME = re.compile(r"""["']([\w.\-/]+\.(\w{2,8}))["']""")
+# Binary resources (.res, .scn): "RSRC" plain, "RSCC" compressed (mode 0 FastLZ, 1 Deflate, 2 Zstd, 3 Gzip).
+BIN_RES = re.compile(rb"res://[\x21-\x7e]+")
+BIN_UID = re.compile(rb"uid://[a-z0-9]+")
 
 _MEM = {}                                            # abs path -> (size, mtime_ns, parsed)
 
@@ -65,8 +75,13 @@ def _read(path):
     hit = _MEM.get(path)
     if hit and hit[0] == st.st_size and hit[1] == st.st_mtime_ns:
         return hit[2]
-    parsed = {"uid": None, "type": None, "paths": [], "uids": []}
-    if st.st_size <= MAX_FILE:
+    parsed = {"uid": None, "type": None, "paths": [], "uids": [], "names": []}
+    ext = os.path.splitext(path)[1].lower()
+    if st.st_size <= MAX_FILE and ext in (".res", ".scn"):
+        parsed.update(_read_binary(path))
+    elif st.st_size <= MAX_FILE and ext == ".gltf":
+        parsed["paths"] = _gltf_uris(path)
+    elif st.st_size <= MAX_FILE:
         with open(path, encoding="utf-8", errors="replace") as f:
             text = f.read()
         own = OWN_UID.search(text) if path.endswith(".import") else HEADER_UID.search(text)
@@ -76,8 +91,96 @@ def _read(path):
         parsed["paths"] = sorted({p[len("res://"):] for p in QUOTED_RES.findall(text)
                                   if not p[len("res://"):].startswith(".godot/")})
         parsed["uids"] = sorted(set(QUOTED_UID.findall(text)))
+        if ext in SCRIPT_EXTS:
+            names = {n for n, e in QUOTED_NAME.findall(text) if "." + e.lower() in KIND_BY_EXT or e.lower() in ("tres", "res")}
+            names -= {n for n in names if n.startswith("res:")}
+            dirs = {d[len("res://"):] for d in QUOTED_DIR.findall(text)}
+            parsed["paths"] = sorted(set(parsed["paths"]) | {d + n for d in dirs for n in names})
+            parsed["names"] = sorted(n for n in names if "/" not in n)
     _MEM[path] = (st.st_size, st.st_mtime_ns, parsed)
     return parsed
+
+
+def _gltf_uris(path):
+    """Project-relative paths of the files a .gltf names by uri (its textures, its .bin), resolved from its folder."""
+    import json
+    from urllib.parse import unquote
+    try:
+        with open(path, encoding="utf-8") as f:
+            doc = json.load(f)
+    except (OSError, ValueError):
+        return []
+    root = _project_root_of(path)
+    out = set()
+    for key in ("images", "buffers"):
+        for item in doc.get(key) or ():
+            uri = item.get("uri") if isinstance(item, dict) else None
+            if uri and not uri.startswith("data:") and "://" not in uri:
+                full = os.path.normpath(os.path.join(os.path.dirname(path), unquote(uri)))
+                if root:
+                    out.add(os.path.relpath(full, root).replace("\\", "/"))
+    return sorted(out)
+
+
+def _project_root_of(path):
+    d = os.path.dirname(os.path.abspath(path))
+    while True:
+        if os.path.isfile(os.path.join(d, "project.godot")):
+            return d
+        up = os.path.dirname(d)
+        if up == d:
+            return None
+        d = up
+
+
+def _decompress(mode, data):
+    """One RSCC block, or None when this Python cannot (FastLZ always; Zstd before Python 3.14)."""
+    import zlib
+    try:
+        if mode == 1:
+            return zlib.decompress(data)
+        if mode == 3:
+            return zlib.decompress(data, 16 + zlib.MAX_WBITS)
+        if mode == 2:
+            from compression import zstd             # Python 3.14+
+            return zstd.decompress(data)
+    except Exception:
+        return None
+    return None
+
+
+def _read_binary(path):
+    """{type, paths, uids, unreadable} of a binary resource: the class in its header and the res:// and uid://
+    strings it holds (its external resources). A compressed file this Python cannot open is marked unreadable."""
+    import struct
+    with open(path, "rb") as f:
+        raw = f.read()
+    out = {"paths": [], "uids": [], "type": None, "unreadable": False}
+    if raw[:4] == b"RSCC":
+        mode, block, total = struct.unpack_from("<III", raw, 4)
+        count = total // block + 1                # Godot writes one block more than whole blocks, always
+        sizes = struct.unpack_from("<%dI" % count, raw, 16)
+        pos, parts = 16 + 4 * count, []
+        for n in sizes:
+            part = _decompress(mode, raw[pos:pos + n])
+            if part is None:
+                out["unreadable"] = True
+                return out
+            parts.append(part)
+            pos += n
+        raw = b"".join(parts)                     # what follows the RSRC magic (the magic itself is not compressed)
+    elif raw[:4] != b"RSRC":
+        return out
+    else:
+        raw = raw[4:]
+    try:                                          # big_endian, use_real64, major, minor, format, then the class name
+        length = struct.unpack_from("<I", raw, 20)[0]
+        out["type"] = raw[24:24 + length].rstrip(b"\0").decode("ascii", "replace") or None
+    except struct.error:
+        pass
+    out["paths"] = sorted({m.decode("ascii")[len("res://"):] for m in BIN_RES.findall(raw)})
+    out["uids"] = sorted({m.decode("ascii") for m in BIN_UID.findall(raw)})
+    return out
 
 
 def _walk(root, ignore):
@@ -138,7 +241,7 @@ def build(root, ignore=DEFAULT_IGNORE, log=print, progress=None):
             uid = found.group(0) if found else None
         ext = os.path.splitext(p)[1].lower()
         rtype = None
-        if ext in (".tscn", ".tres"):
+        if ext in (".tscn", ".tres", ".res", ".scn"):
             parsed = _read(p)
             uid = uid or parsed["uid"]
             rtype = parsed["type"]
@@ -146,25 +249,31 @@ def build(root, ignore=DEFAULT_IGNORE, log=print, progress=None):
         id_of[rel] = asset_id
         if uid:
             id_by_uid[uid] = asset_id
-        if ext in REF_EXTS:
+        if ext in REF_EXTS or ext in (".res", ".scn", ".gltf"):
             sources.append((p, rel, False))
         kind = "other"
         if ext == ".tres":
             kind = _kind_of_resource(rtype)
-        elif ext == ".res":
-            kind = "asset"
+        elif ext in (".res", ".scn"):
+            kind = "scene" if rtype == "PackedScene" else _kind_of_resource(rtype) if rtype else "asset"
         elif ext in KIND_BY_EXT:
             kind = KIND_BY_EXT[ext]
         (outside if ignored else assets)[asset_id] = rel if ignored else {"path": rel, "kind": kind}
 
     # References: strings in scenes, resources, scripts and .import files, resolved by path, else by uid.
-    refs, uses = {}, {}
+    refs, uses, unreadable = {}, {}, []
+    by_name = {}
+    for q in id_of:
+        by_name.setdefault(q.rsplit("/", 1)[-1], []).append(q)
     report = _reporter(progress, len(sources))
     for done, (p, rel, is_import) in enumerate(sources, 1):
         report("refs", done, rel)
         parsed = _read(p)
         own = id_of.get(rel)
         found = {id_of[q] for q in parsed["paths"] if q in id_of} | {id_by_uid[u] for u in parsed["uids"] if u in id_by_uid}
+        found |= {id_of[by_name[n][0]] for n in parsed.get("names", ()) if len(by_name.get(n, ())) == 1}
+        if parsed.get("unreadable"):
+            unreadable.append(rel)
         found.discard(own)
         for g in found:
             refs.setdefault(g, []).append(rel)
@@ -199,9 +308,10 @@ def build(root, ignore=DEFAULT_IGNORE, log=print, progress=None):
     for key in [k for k in _MEM if k.startswith(root + os.sep) and not os.path.exists(k)]:
         del _MEM[key]
     out = {"scanned": time.time(), "assets_root": root, "assets": assets, "refs": refs, "uses": uses,
-           "build_scenes": build_scenes, "force_text": True, "settings_refs": settings_refs, "outside": outside}
+           "build_scenes": build_scenes, "force_text": True, "settings_refs": settings_refs, "outside": outside,
+           "unreadable": sorted(unreadable)}
     log(f"godot dump: {len(assets)} assets, {len(sources)} reference files, {len(refs)} referenced ids, "
-        f"{time.time() - t0:.1f}s")
+        f"{len(unreadable)} compressed resources not readable here, {time.time() - t0:.1f}s")
     return out
 
 

@@ -72,7 +72,8 @@ class GodotAdapter(EngineAdapter):
             mode = number("compress/mode")
             return {"importer": "texture", "max_size": number("process/size_limit") or None,
                     "compressed": None if mode is None else mode not in NO_COMPRESSION,
-                    "mipmaps": flag("mipmaps/generate"), "readable": None}
+                    "mipmaps": flag("mipmaps/generate"), "readable": None,
+                    "detect_3d": bool(number("detect_3d/compress_to"))}
         if importer == "scene":
             return {"importer": "model", "readable": None}
         return {}
